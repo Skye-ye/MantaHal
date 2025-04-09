@@ -1,6 +1,15 @@
 [package]
-name = "manta_hal"
+name = "arch"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+
+[features]
+
+[target.'cfg(target_arch = "riscv64")'.dependencies]
+riscv = "0.13.0"
+sbi-rt = { version = "0.0.3", features = ["legacy"] }
+
+[target.'cfg(target_arch = "loongarch64")'.dependencies]
+loongArch64 = "0.2.4"
