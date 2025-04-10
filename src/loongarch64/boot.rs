@@ -1,6 +1,6 @@
-use crate::{
-    loongarch64::config::{board::MAX_HARTS, mm::KERNEL_STACK_SIZE},
-    loongarch64::csr,
+use crate::loongarch64::{
+    config::{board::MAX_HARTS, mm::KERNEL_STACK_SIZE},
+    csr,
 };
 
 #[unsafe(link_section = ".bss.stack")]
