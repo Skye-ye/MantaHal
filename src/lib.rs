@@ -14,5 +14,4 @@ pub use riscv64::*;
 #[cfg(target_arch = "loongarch64")]
 pub use loongarch64::*;
 
-#[cfg(target_arch = "loongarch64" or target_arch = "riscv64")]
 mod macro_utils;  //shared
