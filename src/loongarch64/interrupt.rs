@@ -1,5 +1,5 @@
 use loongArch64::register::{crmd, ecfg};
-use::loongArch64::register::ecfg::LineBasedInterrupt;
+use loongArch64::register::ecfg::LineBasedInterrupt;
 
 const HARDWARE_INTERRUPTS_BITS: LineBasedInterrupt = LineBasedInterrupt::HWI0 | 
     LineBasedInterrupt::HWI1 | LineBasedInterrupt::HWI2 | LineBasedInterrupt::HWI3 |
