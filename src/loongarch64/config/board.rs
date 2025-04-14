@@ -5,4 +5,4 @@ pub const QEMU_DTB_ADDR: usize = 0x100000;
 
 pub const MAX_HARTS: usize = 2;
 
-register_mut_const!(pub CLOCK_FREQ, usize, 10000000);
+pub const CLOCK_FREQ: usize = 10000000;
