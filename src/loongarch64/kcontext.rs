@@ -113,7 +113,7 @@ unsafe extern "C" fn context_switch_pt_impl(
             restore_callee_regs!(),
             // Return to the caller
             "ret",
-            pgdl = const crate::loongarch64::csr::PGDL,
+            pgdl = const super::config::csr::PGDL,
         );
     }
 }

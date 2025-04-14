@@ -1,8 +1,11 @@
 //! Address space for LoongArch64
 //!
 //! This module implements basic address space operations for LoongArch64.
-use crate::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
-use crate::loongarch64::config::mm::{PA_MASK, PAGE_MASK, PAGE_SIZE, PPN_MASK, VA_MASK, VPN_MASK};
+use crate::common::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
+use crate::common::pagetable::PageTableEntry;
+use crate::config::mm::{
+    PA_MASK, PAGE_MASK, PAGE_SIZE, PAGE_SIZE_BITS, PPN_MASK, PTES_PER_PAGE, VA_MASK, VPN_MASK,
+};
 
 // PhysAddr implementations
 impl PhysAddr {
@@ -50,6 +53,13 @@ impl From<PhysAddr> for PhysPageNum {
     }
 }
 
+impl From<PhysPageNum> for PhysAddr {
+    #[inline]
+    fn from(v: PhysPageNum) -> Self {
+        Self(v.0 << PAGE_SIZE_BITS)
+    }
+}
+
 // VirtAddr implementations
 impl VirtAddr {
     #[inline]
@@ -93,5 +103,31 @@ impl From<VirtAddr> for VirtPageNum {
         // Address must be aligned. If not, ceil or floor it.
         assert!(v.aligned(), "Virtual address must be aligned");
         v.floor()
+    }
+}
+
+impl PhysAddr {
+    pub fn get_ref<T>(&self) -> &'static T {
+        unsafe { (self.0 as *const T).as_ref().unwrap() }
+    }
+    pub fn get_mut<T>(&self) -> &'static mut T {
+        unsafe { (self.0 as *mut T).as_mut().unwrap() }
+    }
+}
+
+impl PhysPageNum {
+    pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
+        let pa: PhysAddr = (*self).into();
+        unsafe { core::slice::from_raw_parts_mut(pa.0 as *mut PageTableEntry, PTES_PER_PAGE) }
+    }
+
+    pub fn get_bytes_array(&self) -> &'static mut [u8] {
+        let pa: PhysAddr = (*self).into();
+        unsafe { core::slice::from_raw_parts_mut(pa.0 as *mut u8, PAGE_SIZE) }
+    }
+
+    pub fn get_mut<T>(&self) -> &'static mut T {
+        let pa: PhysAddr = (*self).into();
+        pa.get_mut()
     }
 }

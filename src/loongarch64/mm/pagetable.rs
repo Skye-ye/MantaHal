@@ -1,6 +1,8 @@
-use crate::addr::PhysPageNum;
 use crate::bit;
-use crate::loongarch64::config::mm::{PPN_MASK, PPN_OFFSET_IN_PTE};
+use crate::common::addr::{PhysAddr, PhysPageNum};
+use crate::common::pagetable::PageTableEntry;
+use crate::common::pagetable::{CommonPTEFlags, PTE};
+use crate::config::mm::{PPN_MASK, PPN_OFFSET_IN_PTE};
 
 bitflags::bitflags! {
     /// Possible flags for a page table entry.
@@ -14,14 +16,16 @@ bitflags::bitflags! {
         const PLV = bit!(2) | bit!(3);
         /// Memory access type
         const MAT = bit!(4) | bit!(5);
-        /// Designates a global mapping OR Whether the page is huge page.
-        const GH = bit!(6);
+        /// Designates a global mapping.
+        const G = bit!(6);
+        /// Whether the page is huge page.
+        const H = bit!(6);
         /// Page is existing.
         const P = bit!(7);
         /// Page is writeable.
         const W = bit!(8);
         /// Is a Global Page if using huge page(GH bit).
-        const G = bit!(12);
+        const GH = bit!(12);
         /// Page is not readable.
         const NR = bit!(61);
         /// Page is not executable.
@@ -32,36 +36,53 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct PageTableEntry {
-    pub bits: usize,
-}
+impl PTE for PageTableEntry {
+    type FlagsType = PTEFlags;
 
-impl PageTableEntry {
     /// Create a new page table entry.
-    pub fn new(ppn: PhysPageNum, flags: PTEFlags) -> Self {
+    fn new(ppn: PhysPageNum, flags: Self::FlagsType) -> Self {
         PageTableEntry {
             bits: ppn.0 << PPN_OFFSET_IN_PTE | flags.bits(),
         }
     }
 
     /// Create a new empty page table entry.
-    pub fn empty() -> Self {
+    fn empty() -> Self {
         PageTableEntry { bits: 0 }
     }
 
-    pub fn ppn(&self) -> PhysPageNum {
+    /// Get the page number of the page table entry.
+    fn ppn(&self) -> PhysPageNum {
         ((self.bits >> PPN_OFFSET_IN_PTE) & PPN_MASK).into()
     }
 
     /// Get the flags of the page table entry.
-    pub fn flags(&self) -> PTEFlags {
+    fn flags(&self) -> PTEFlags {
         PTEFlags::from_bits(self.bits as usize).unwrap()
     }
 
     /// Check if the page table entry is valid.
-    pub fn is_valid(&self) -> bool {
+    fn valid(&self) -> bool {
         (self.flags() & PTEFlags::V) != PTEFlags::empty()
+    }
+
+    /// Check if the page table entry is dirty.
+    fn dirty(&self) -> bool {
+        (self.flags() & PTEFlags::D) != PTEFlags::empty()
+    }
+
+    /// Check if the page table entry is readable. (readable when NR is 0)
+    fn readable(&self) -> bool {
+        (self.flags() & PTEFlags::NR) == PTEFlags::empty()
+    }
+
+    /// Check if the page table entry is writable.
+    fn writable(&self) -> bool {
+        (self.flags() & PTEFlags::W) != PTEFlags::empty()
+    }
+
+    /// Check if the page table entry is executable. (executable when NX is 0)
+    fn executable(&self) -> bool {
+        (self.flags() & PTEFlags::NX) == PTEFlags::empty()
     }
 }

@@ -1,7 +1,4 @@
-use crate::loongarch64::{
-    config::{board::MAX_HARTS, mm::KERNEL_STACK_SIZE},
-    csr,
-};
+use super::config::{board::MAX_HARTS, csr, mm::KERNEL_STACK_SIZE};
 
 #[unsafe(link_section = ".bss.stack")]
 static mut BOOT_STACK: [u8; KERNEL_STACK_SIZE * MAX_HARTS] = [0u8; KERNEL_STACK_SIZE * MAX_HARTS];
@@ -13,10 +10,10 @@ unsafe extern "C" fn _start(hart_id: usize, dtb_addr: usize) -> ! {
     unsafe {
         core::arch::naked_asm!("
             ori         $t0, $zero, 0x1     # CSR_DMW1_PLV0
-            lu52i.d     $t0, $t0, -2048     # UC, PLV0, 0x8000 xxxx xxxx xxxx
+            lu52i.d     $t0, $t0, -2048     # UC, PLV0, 0x8000 0000 0000 0001
             csrwr       $t0, {dmw0}         # LOONGARCH_CSR_DMW0
             ori         $t0, $zero, 0x11    # CSR_DMW1_MAT | CSR_DMW1_PLV0
-            lu52i.d     $t0, $t0, -1792     # CA, PLV0, 0x9000 xxxx xxxx xxxx
+            lu52i.d     $t0, $t0, -1792     # CA, PLV0, 0x9000 0000 0000 0011
             csrwr       $t0, {dmw1}         # LOONGARCH_CSR_DMW1
 
             # Goto 1 if hart is not 0

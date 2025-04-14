@@ -1,4 +1,4 @@
-use crate::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
+use crate::common::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
 
 // Define RISC-V specific constants
 const PAGE_SIZE_BITS: usize = 12;

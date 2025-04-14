@@ -1,7 +1,7 @@
+use crate::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 use core::time::Duration;
 use loongArch64::register::tcfg;
 use loongArch64::time::Time;
-use crate::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 
 pub fn get_time() -> usize {
     Time::read()
@@ -24,7 +24,7 @@ pub fn get_time_duration() -> Duration {
 }
 
 // reset
-pub unsafe fn set_next_time_irq(){
+pub unsafe fn set_next_time_irq() {
     let next_trigger: usize = ((CLOCK_FREQ / INTERRUPTS_PER_SECOND) + 3) & !3 as usize;
     tcfg::set_init_val(next_trigger);
 }
@@ -36,7 +36,7 @@ pub unsafe fn set_timer_irq(times: usize) {
 }
 
 pub fn init_timer() {
-    let ticks: usize = ((CLOCK_FREQ / INTERRUPTS_PER_SECOND) + 3) & !3;  // round up to 4
+    let ticks: usize = ((CLOCK_FREQ / INTERRUPTS_PER_SECOND) + 3) & !3; // round up to 4
     tcfg::set_periodic(true); // set timer to one-shot mode
     tcfg::set_init_val(ticks); // set timer initial value
     tcfg::set_en(true); // enable timer
@@ -46,13 +46,13 @@ pub fn init_timer() {
 
 // enable decrement
 pub unsafe fn enable_timer() {
-    unsafe{
+    unsafe {
         tcfg::set_en(true);
     }
 }
 
 pub unsafe fn disable_timer() {
-    unsafe{
+    unsafe {
         tcfg::set_en(false);
     }
 }
