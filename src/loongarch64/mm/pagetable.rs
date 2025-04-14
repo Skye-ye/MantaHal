@@ -40,49 +40,40 @@ bitflags::bitflags! {
 impl PTE for PageTableEntry {
     type FlagsType = PTEFlags;
 
-    /// Create a new page table entry.
     fn new(ppn: PhysPageNum, flags: Self::FlagsType) -> Self {
         PageTableEntry {
             bits: ppn.0 << PPN_OFFSET_IN_PTE | flags.bits(),
         }
     }
 
-    /// Create a new empty page table entry.
     fn empty() -> Self {
         PageTableEntry { bits: 0 }
     }
 
-    /// Get the page number of the page table entry.
     fn ppn(&self) -> PhysPageNum {
         ((self.bits >> PPN_OFFSET_IN_PTE) & PPN_MASK).into()
     }
 
-    /// Get the flags of the page table entry.
     fn flags(&self) -> PTEFlags {
         PTEFlags::from_bits(self.bits as usize).unwrap()
     }
 
-    /// Check if the page table entry is valid.
     fn valid(&self) -> bool {
         (self.flags() & PTEFlags::V) != PTEFlags::empty()
     }
 
-    /// Check if the page table entry is dirty.
     fn dirty(&self) -> bool {
         (self.flags() & PTEFlags::D) != PTEFlags::empty()
     }
 
-    /// Check if the page table entry is readable. (readable when NR is 0)
     fn readable(&self) -> bool {
         (self.flags() & PTEFlags::NR) == PTEFlags::empty()
     }
 
-    /// Check if the page table entry is writable.
     fn writable(&self) -> bool {
         (self.flags() & PTEFlags::W) != PTEFlags::empty()
     }
 
-    /// Check if the page table entry is executable. (executable when NX is 0)
     fn executable(&self) -> bool {
         (self.flags() & PTEFlags::NX) == PTEFlags::empty()
     }

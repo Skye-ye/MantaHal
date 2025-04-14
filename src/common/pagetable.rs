@@ -23,13 +23,22 @@ bitflags::bitflags! {
 pub trait PTE {
     type FlagsType;
 
+    /// create a new page table entry
     fn new(ppn: PhysPageNum, flags: Self::FlagsType) -> Self;
+    /// create a empty page table entry
     fn empty() -> Self;
+    /// get the physical page number of the page table entry
     fn ppn(&self) -> PhysPageNum;
+    /// get the flags of the page table entry
     fn flags(&self) -> Self::FlagsType;
+    /// check if the page table entry is valid
     fn valid(&self) -> bool;
+    /// check if the page table entry is dirty
     fn dirty(&self) -> bool;
+    /// check if the page table entry is readable
     fn readable(&self) -> bool;
+    /// check if the page table entry is writable
     fn writable(&self) -> bool;
+    /// check if the page table entry is executable
     fn executable(&self) -> bool;
 }
