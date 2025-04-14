@@ -1,10 +1,17 @@
 use super::addr::PhysPageNum;
+use super::frame_allocator::FrameTracker;
 use crate::bit;
+use alloc::vec::Vec;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct PageTableEntry {
     pub bits: usize,
+}
+
+pub struct PageTable {
+    root_ppn: PhysPageNum,
+    frames: Vec<FrameTracker>,
 }
 
 bitflags::bitflags! {

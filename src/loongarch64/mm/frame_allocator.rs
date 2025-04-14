@@ -1,14 +1,8 @@
 use crate::common::addr::{PhysAddr, PhysPageNum};
+use crate::common::frame_allocator::{FrameAllocatorOperation, FrameTracker};
 use crate::config::mm::{PHYS_ADDR_END, PHYS_ADDR_START};
 use crate::utils::static_cell::StaticCell;
 use alloc::vec::Vec;
-
-trait FrameAllocator {
-    fn new() -> Self;
-    fn alloc(&mut self) -> Option<PhysPageNum>;
-    fn alloc_more(&mut self, pages: usize) -> Option<Vec<PhysPageNum>>;
-    fn dealloc(&mut self, ppn: PhysPageNum);
-}
 
 type FrameAllocatorImpl = StackFrameAllocator;
 pub static FRAME_ALLOCATOR: StaticCell<FrameAllocatorImpl> = StaticCell::new();
@@ -30,10 +24,6 @@ pub fn frame_alloc() -> Option<FrameTracker> {
 
 pub fn frame_dealloc(ppn: PhysPageNum) {
     FRAME_ALLOCATOR.get_mut().dealloc(ppn);
-}
-
-pub struct FrameTracker {
-    pub ppn: PhysPageNum,
 }
 
 impl FrameTracker {
@@ -60,13 +50,6 @@ pub struct StackFrameAllocator {
 }
 
 impl StackFrameAllocator {
-    pub fn init(&mut self, l: PhysPageNum, r: PhysPageNum) {
-        self.current = l.0;
-        self.end = r.0;
-    }
-}
-
-impl FrameAllocator for StackFrameAllocator {
     fn new() -> Self {
         Self {
             current: 0,
@@ -74,6 +57,14 @@ impl FrameAllocator for StackFrameAllocator {
             recycled: Vec::new(),
         }
     }
+
+    fn init(&mut self, l: PhysPageNum, r: PhysPageNum) {
+        self.current = l.0;
+        self.end = r.0;
+    }
+}
+
+impl FrameAllocatorOperation for StackFrameAllocator {
     fn alloc(&mut self) -> Option<PhysPageNum> {
         if let Some(ppn) = self.recycled.pop() {
             Some(ppn.into())
@@ -84,6 +75,7 @@ impl FrameAllocator for StackFrameAllocator {
             Some((self.current - 1).into())
         }
     }
+
     fn alloc_more(&mut self, pages: usize) -> Option<Vec<PhysPageNum>> {
         if self.current + pages >= self.end {
             None
@@ -94,6 +86,7 @@ impl FrameAllocator for StackFrameAllocator {
             Some(v)
         }
     }
+
     fn dealloc(&mut self, ppn: PhysPageNum) {
         let ppn = ppn.0;
         // validity check
