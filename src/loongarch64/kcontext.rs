@@ -103,9 +103,9 @@ unsafe extern "C" fn context_switch_pt_impl(
             // Save Kernel Context
             save_callee_regs!(),
             // Switch to new page table
-            // Write PageTable to pgdl
+            // Write PageTable to pgdh
             "
-            csrwr     $a2, {pgdl}
+            csrwr     $a2, {pgdh}
             dbar      0
             invtlb    0x00, $r0, $r0
             ",
@@ -113,7 +113,7 @@ unsafe extern "C" fn context_switch_pt_impl(
             restore_callee_regs!(),
             // Return to the caller
             "ret",
-            pgdl = const super::config::csr::PGDL,
+            pgdh = const super::config::csr::PGDL,
         );
     }
 }

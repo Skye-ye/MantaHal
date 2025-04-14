@@ -46,13 +46,9 @@ pub fn init_timer() {
 
 // enable decrement
 pub unsafe fn enable_timer() {
-    unsafe {
-        tcfg::set_en(true);
-    }
+    tcfg::set_en(true);
 }
 
 pub unsafe fn disable_timer() {
-    unsafe {
-        tcfg::set_en(false);
-    }
+    tcfg::set_en(false);
 }

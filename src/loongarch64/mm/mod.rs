@@ -22,7 +22,9 @@ pub fn init() {
     init_heap_allocator();
 }
 
+/// Setup multi-level page table walker (pwcl, pwch, pgdh, pgdl)
 fn setup_ptwalker() {
+    // TODO: set pgdl and pgdh
     let mut dir4_i: usize = 0;
     let mut dir4_w: usize = 0;
     let mut dir3_i: usize = 0;

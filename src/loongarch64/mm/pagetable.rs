@@ -1,7 +1,8 @@
 use crate::bit;
-use crate::common::addr::{PhysAddr, PhysPageNum};
+use crate::common::addr::PhysPageNum;
+use crate::common::pagetable::CommonPTEFlags;
+use crate::common::pagetable::PTE;
 use crate::common::pagetable::PageTableEntry;
-use crate::common::pagetable::{CommonPTEFlags, PTE};
 use crate::config::mm::{PPN_MASK, PPN_OFFSET_IN_PTE};
 
 bitflags::bitflags! {
@@ -84,5 +85,81 @@ impl PTE for PageTableEntry {
     /// Check if the page table entry is executable. (executable when NX is 0)
     fn executable(&self) -> bool {
         (self.flags() & PTEFlags::NX) == PTEFlags::empty()
+    }
+}
+
+impl From<CommonPTEFlags> for PTEFlags {
+    fn from(value: CommonPTEFlags) -> Self {
+        let mut flags = PTEFlags::V;
+
+        // Writable flag
+        if value.contains(CommonPTEFlags::W) {
+            flags |= PTEFlags::W;
+        }
+
+        // Executable flag (using negative logic in PTEFlags)
+        if !value.contains(CommonPTEFlags::X) {
+            flags |= PTEFlags::NX;
+        }
+
+        // Readable flag (using negative logic in PTEFlags)
+        if !value.contains(CommonPTEFlags::R) {
+            flags |= PTEFlags::NR;
+        }
+
+        // User mode access
+        if value.contains(CommonPTEFlags::U) {
+            flags |= PTEFlags::PLV;
+        }
+
+        // Dirty bit
+        if value.contains(CommonPTEFlags::D) {
+            flags |= PTEFlags::D;
+        }
+
+        // Global page
+        if value.contains(CommonPTEFlags::G) {
+            flags |= PTEFlags::G;
+        }
+
+        flags
+    }
+}
+
+impl From<PTEFlags> for CommonPTEFlags {
+    fn from(val: PTEFlags) -> Self {
+        let mut flags = CommonPTEFlags::empty();
+
+        // Set readable by default, unless not readable
+        if !val.contains(PTEFlags::NR) {
+            flags |= CommonPTEFlags::R;
+        }
+
+        // Set executable by default, unless not executable
+        if !val.contains(PTEFlags::NX) {
+            flags |= CommonPTEFlags::X;
+        }
+
+        // Writable flag
+        if val.contains(PTEFlags::W) {
+            flags |= CommonPTEFlags::W;
+        }
+
+        // Dirty bit
+        if val.contains(PTEFlags::D) {
+            flags |= CommonPTEFlags::D;
+        }
+
+        // User privilege level
+        if val.contains(PTEFlags::PLV) {
+            flags |= CommonPTEFlags::U;
+        }
+
+        // Global page
+        if val.contains(PTEFlags::G) {
+            flags |= CommonPTEFlags::G;
+        }
+
+        flags
     }
 }
