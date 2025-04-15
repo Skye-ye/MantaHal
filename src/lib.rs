@@ -11,3 +11,10 @@ mod common;
 mod utils;
 
 arch_modules![("riscv64", riscv64), ("loongarch64", loongarch64)];
+
+pub trait HAL {
+    /// initialize the hardware
+    fn init();
+    /// shutdown the hardware
+    fn shutdown();
+}

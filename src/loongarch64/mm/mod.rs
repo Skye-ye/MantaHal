@@ -13,12 +13,10 @@ use super::config::{
 };
 use crate::write_csr_loong;
 
-use frame_allocator::init_frame_allocator;
 use heap_allocator::init_heap_allocator;
 
 pub fn init() {
     setup_ptwalker();
-    init_frame_allocator();
     init_heap_allocator();
 }
 
