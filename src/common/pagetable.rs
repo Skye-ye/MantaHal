@@ -3,6 +3,7 @@ use super::frame_allocator::{FrameTracker, frame_alloc};
 use crate::bit;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -24,79 +25,66 @@ bitflags::bitflags! {
     }
 }
 
-pub trait PTEOps {
+pub trait PTOps {
     /// create a new page table entry
-    fn new(&self, ppn: PhysPageNum, flags: PTEFlags) -> PageTableEntry;
+    fn new(ppn: PhysPageNum, flags: PTEFlags) -> PageTableEntry;
     /// get the physical page number of the page table entry
-    fn ppn(&self, pte: &PageTableEntry) -> PhysPageNum;
+    fn ppn(pte: &PageTableEntry) -> PhysPageNum;
     /// get the flags of the page table entry
-    fn flags(&self, pte: &PageTableEntry) -> PTEFlags;
+    fn flags(pte: &PageTableEntry) -> PTEFlags;
     /// check if the page table entry is valid
-    fn valid(&self, pte: &PageTableEntry) -> bool {
-        self.flags(pte).contains(PTEFlags::V)
+    fn valid(pte: &PageTableEntry) -> bool {
+        Self::flags(pte).contains(PTEFlags::V)
     }
     /// check if the page table entry is dirty
-    fn dirty(&self, pte: &PageTableEntry) -> bool {
-        self.flags(pte).contains(PTEFlags::D)
+    fn dirty(pte: &PageTableEntry) -> bool {
+        Self::flags(pte).contains(PTEFlags::D)
     }
     /// check if the page table entry is readable
-    fn readable(&self, pte: &PageTableEntry) -> bool {
-        self.flags(pte).contains(PTEFlags::R)
+    fn readable(pte: &PageTableEntry) -> bool {
+        Self::flags(pte).contains(PTEFlags::R)
     }
     /// check if the page table entry is writable
-    fn writable(&self, pte: &PageTableEntry) -> bool {
-        self.flags(pte).contains(PTEFlags::W)
+    fn writable(pte: &PageTableEntry) -> bool {
+        Self::flags(pte).contains(PTEFlags::W)
     }
     /// check if the page table entry is executable
-    fn executable(&self, pte: &PageTableEntry) -> bool {
-        self.flags(pte).contains(PTEFlags::X)
+    fn executable(pte: &PageTableEntry) -> bool {
+        Self::flags(pte).contains(PTEFlags::X)
     }
+    /// find the page table entry without creating it
+    fn find_pte<'a>(
+        root_ppn: PhysPageNum,
+        frames: &'a [FrameTracker],
+        vpn: VirtPageNum,
+    ) -> Option<&'a PageTableEntry>;
+    /// find the page table entry, if not exist, create it
+    fn find_pte_create<'a>(
+        root_ppn: PhysPageNum,
+        frames: &'a mut Vec<FrameTracker>,
+        vpn: VirtPageNum,
+    ) -> Option<&'a mut PageTableEntry>;
 }
 
-pub struct PageTable<T: PTOps = DefaultPTOps> {
+pub struct PageTable<T> {
     pub(crate) root_ppn: PhysPageNum,
     pub(crate) frames: Vec<FrameTracker>,
-    pub(crate) arch_impl: T,
+    phantom: PhantomData<T>,
 }
 
-pub trait PTOps {
-    /// find the page table entry without creating it
-    fn find_pte(&self, vpn: VirtPageNum) -> Option<&PageTableEntry>;
-    /// find the page table entry and create it if it doesn't exist
-    fn find_pte_create(&mut self, vpn: VirtPageNum) -> Option<&mut PageTableEntry>;
-}
-
-pub struct DefaultPTOps;
-
-impl PTOps for DefaultPTOps {
-    fn find_pte(&self, _vpn: VirtPageNum) -> Option<&PageTableEntry> {
-        // This implementation will be used when no architecture-specific one is provided
-        panic!("No architecture-specific implementation available for PTOps::find_pte")
-    }
-
-    fn find_pte_create(&mut self, _vpn: VirtPageNum) -> Option<&mut PageTableEntry> {
-        // This implementation will be used when no architecture-specific one is provided
-        panic!("No architecture-specific implementation available for PTOps::find_pte_create")
-    }
-}
-
-impl<T: PTEOps + PTOps> PageTable<T> {
-    pub fn new(arch_impl: T) -> Self {
+impl<T: PTOps> PageTable<T> {
+    pub fn new(_arch_impl: T) -> Self {
         let frame = frame_alloc().unwrap();
         PageTable {
             root_ppn: frame.ppn,
             frames: vec![frame],
-            arch_impl,
+            phantom: PhantomData,
         }
     }
 
     pub fn map(&mut self, vpn: VirtPageNum, ppn: PhysPageNum, flags: PTEFlags) {
-        let pte = self.arch_impl.find_pte_create(vpn).unwrap();
-        assert!(
-            !self.arch_impl.valid(pte),
-            "vpn {:?} is mapped before mapping",
-            vpn
-        );
-        *pte = self.arch_impl.new(ppn, flags | PTEFlags::V);
+        let pte = T::find_pte_create(self.root_ppn, &mut self.frames, vpn).unwrap();
+        assert!(!T::valid(pte), "vpn {:?} is mapped before mapping", vpn);
+        *pte = T::new(ppn, flags | PTEFlags::V);
     }
 }
