@@ -2,6 +2,8 @@ pub mod addr;
 pub mod pagetable;
 pub mod tlb;
 
+use loongArch64::register::tlbrentry;
+
 use super::config::{
     csr::{PWCH, PWCL},
     mm::{
@@ -11,8 +13,10 @@ use super::config::{
 };
 use crate::write_csr_loong;
 
-pub fn init() {
+pub fn mm_init(tlbrentry: usize) {
+    tlb::tlb_init();
     setup_ptwalker();
+    tlb::set_tlb_refill(tlbrentry);
 }
 
 /// Setup multi-level page table walker (pwcl, pwch, pgdh, pgdl)
