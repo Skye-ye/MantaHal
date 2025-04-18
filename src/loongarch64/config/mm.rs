@@ -9,6 +9,8 @@ pub const PAGE_MASK: usize = PAGE_SIZE - 1;
 pub const PTE_SIZE_BITS: usize = 3;
 pub const PTE_SIZE: usize = 1 << PTE_SIZE_BITS;
 pub const PTES_PER_PAGE: usize = PAGE_SIZE / PTE_SIZE;
+pub const PTE_INDEX_BITS: usize = PAGE_SIZE_BITS - PTE_SIZE_BITS;
+pub const PTE_INDEX_MASK: usize = (1 << PTE_INDEX_BITS) - 1;
 
 pub const PA_LEN: usize = 48;
 pub const PA_MASK: usize = (1 << PA_LEN) - 1;

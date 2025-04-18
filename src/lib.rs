@@ -3,7 +3,6 @@
 #![feature(naked_functions)]
 #![feature(alloc_error_handler)]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
-
 extern crate alloc;
 extern crate bitflags;
 

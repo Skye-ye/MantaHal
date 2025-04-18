@@ -1,10 +1,12 @@
 use crate::bit;
-use crate::common::addr::{PhysPageNum, VirtPageNum};
-use crate::common::frame_allocator::FrameTracker;
+use crate::common::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
+use crate::common::frame_allocator::{FrameTracker, frame_alloc};
 use crate::common::pagetable::PTEFlags;
 use crate::common::pagetable::PTOps;
 use crate::common::pagetable::PageTableEntry;
-use crate::config::mm::{PAGE_SIZE, PAGE_TABLE_LEVELS, PPN_MASK, PPN_OFFSET_IN_PTE};
+use crate::config::mm::{
+    PAGE_SIZE, PAGE_TABLE_LEVELS, PPN_MASK, PPN_OFFSET_IN_PTE, PTE_INDEX_BITS, PTE_INDEX_MASK,
+};
 use alloc::vec::Vec;
 
 bitflags::bitflags! {
@@ -59,12 +61,43 @@ impl PTOps for Loongarch64PTImpl {
             .into()
     }
 
-    fn find_pte<'a>(
-        root_ppn: PhysPageNum,
-        frames: &'a [FrameTracker],
-        vpn: VirtPageNum,
-    ) -> Option<&'a PageTableEntry> {
-        unimplemented!();
+    fn floor(va: VirtAddr) -> VirtPageNum {
+        va.floor()
+    }
+
+    fn ppn_to_pa(ppn: PhysPageNum) -> PhysAddr {
+        ppn.into()
+    }
+
+    fn vpn_to_va(vpn: VirtPageNum) -> VirtAddr {
+        vpn.into()
+    }
+
+    fn ppn_from_token(pgdl: usize) -> PhysPageNum {
+        (pgdl >> 12).into()
+    }
+
+    fn get_bytes_array(ppn: PhysPageNum) -> &'static mut [u8] {
+        let pa: PhysAddr = ppn.into();
+        unsafe { core::slice::from_raw_parts_mut(pa.0 as *mut u8, PAGE_SIZE) }
+    }
+
+    fn find_pte<'a>(root_ppn: PhysPageNum, vpn: VirtPageNum) -> Option<&'a mut PageTableEntry> {
+        let mut ppn = root_ppn;
+        let idxs = vpn.indices();
+        let mut res: Option<&'a mut PageTableEntry> = None;
+        for (i, idx) in idxs.iter().enumerate() {
+            let pte = &mut ppn.get_pte_array()[*idx];
+            if i == PAGE_TABLE_LEVELS - 1 {
+                res = Some(pte);
+                break;
+            }
+            if Self::valid(pte) {
+                break;
+            }
+            ppn = Self::ppn(pte);
+        }
+        res
     }
 
     fn find_pte_create<'a>(
@@ -72,7 +105,23 @@ impl PTOps for Loongarch64PTImpl {
         frames: &'a mut Vec<FrameTracker>,
         vpn: VirtPageNum,
     ) -> Option<&'a mut PageTableEntry> {
-        unimplemented!();
+        let idxs = vpn.indices();
+        let mut ppn = root_ppn;
+        let mut res: Option<&'a mut PageTableEntry> = None;
+        for (i, idx) in idxs.iter().enumerate() {
+            let pte = &mut ppn.get_pte_array()[*idx];
+            if i == PAGE_TABLE_LEVELS - 1 {
+                res = Some(pte);
+                break;
+            }
+            if !Self::valid(pte) {
+                let frame = frame_alloc().unwrap();
+                *pte = Self::new(frame.ppn, PTEFlags::V);
+                frames.push(frame);
+            }
+            ppn = Self::ppn(pte);
+        }
+        res
     }
 }
 
@@ -154,6 +203,12 @@ impl From<PTEFlags> for Loongarch64PTEFlags {
 
 impl VirtPageNum {
     pub fn indices(&self) -> [usize; PAGE_TABLE_LEVELS] {
-        unimplemented!();
+        let mut indices = [0; PAGE_TABLE_LEVELS];
+        let mut vpn = self.0;
+        for i in (0..PAGE_TABLE_LEVELS).rev() {
+            indices[i] = vpn & PTE_INDEX_MASK;
+            vpn >>= PTE_INDEX_BITS;
+        }
+        indices
     }
 }
