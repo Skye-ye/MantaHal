@@ -36,7 +36,7 @@ bitflags::bitflags! {
         /// Page is not executable.
         const NX = bit!(62);
         /// Whether the privilege Level is restricted. When RPLV is 0, the PTE
-        /// can be accessed by any program with privilege Level highter than PLV.
+        /// can be accessed by any program with privilege Level higher than PLV.
         const RPLV = bit!(63);
     }
 }
