@@ -1,6 +1,4 @@
 pub mod addr;
-pub mod frame_allocator;
-pub mod heap_allocator;
 pub mod pagetable;
 pub mod tlb;
 
@@ -13,11 +11,8 @@ use super::config::{
 };
 use crate::write_csr_loong;
 
-use heap_allocator::init_heap_allocator;
-
 pub fn init() {
     setup_ptwalker();
-    init_heap_allocator();
 }
 
 /// Setup multi-level page table walker (pwcl, pwch, pgdh, pgdl)
