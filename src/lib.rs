@@ -1,17 +1,19 @@
 #![no_std]
 #![no_main]
 #![feature(naked_functions)]
+#![feature(alloc_error_handler)]
+#![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
+extern crate alloc;
+extern crate bitflags;
 
-#[cfg(target_arch = "riscv64")]
-mod riscv64;
+mod common;
+mod utils;
 
-#[cfg(target_arch = "loongarch64")]
-mod loongarch64;
+arch_modules![("riscv64", riscv64), ("loongarch64", loongarch64)];
 
-#[cfg(target_arch = "riscv64")]
-pub use riscv64::*;
-
-#[cfg(target_arch = "loongarch64")]
-pub use loongarch64::*;
-
-mod macro_utils;  //shared
+pub trait HAL {
+    /// initialize the hardware
+    fn init();
+    /// shutdown the hardware
+    fn shutdown();
+}
