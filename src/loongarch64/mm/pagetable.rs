@@ -77,6 +77,11 @@ impl PTOps for Loongarch64PTImpl {
         (pgdl >> 12).into()
     }
 
+    fn token_from_ppn(ppn: PhysPageNum) -> usize {
+        let ppn_usize: usize = ppn.into();
+        ppn_usize << 12
+    }
+
     fn get_bytes_array(ppn: PhysPageNum) -> &'static mut [u8] {
         let pa: PhysAddr = ppn.into();
         unsafe { core::slice::from_raw_parts_mut(pa.0 as *mut u8, PAGE_SIZE) }

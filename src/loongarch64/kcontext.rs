@@ -1,4 +1,3 @@
-use crate::loongarch64::pagetable::PageTable;
 /// Save the task context registers
 macro_rules! save_callee_regs {
     () => {
@@ -77,27 +76,8 @@ pub unsafe extern "C" fn context_switch(from: *mut KContext, to: *const KContext
 /// Context Switch With Page Table
 ///
 /// Save the context of current task and switch to new task with new page table
-#[inline]
-pub unsafe extern "C" fn context_switch_pt(
-    from: *mut KContext,
-    to: *const KContext,
-    pt_token: PageTable,
-) {
-    unsafe {
-        // TODO: Implement pagetable
-        context_switch_pt_impl(from, to, pt_token.0.0);
-    }
-}
-
-/// Context Switch With Page Table Implement
-///
-/// The detail implementation of [context_switch_pt]
 #[naked]
-unsafe extern "C" fn context_switch_pt_impl(
-    from: *mut KContext,
-    to: *const KContext,
-    pt_token: usize,
-) {
+unsafe extern "C" fn context_switch_pt(from: *mut KContext, to: *const KContext, pt_token: usize) {
     unsafe {
         core::arch::naked_asm!(
             // Save Kernel Context
@@ -113,7 +93,7 @@ unsafe extern "C" fn context_switch_pt_impl(
             restore_callee_regs!(),
             // Return to the caller
             "ret",
-            pgdh = const super::config::csr::PGDL,
+            pgdh = const super::config::csr::PGDH,
         );
     }
 }

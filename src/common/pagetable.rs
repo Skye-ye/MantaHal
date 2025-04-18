@@ -63,6 +63,8 @@ pub trait PTOps {
     fn vpn_to_va(vpn: VirtPageNum) -> VirtAddr;
     /// create a ppn from a token (usually from user space)
     fn ppn_from_token(token: usize) -> PhysPageNum;
+    /// create a token from a physical page number
+    fn token_from_ppn(ppn: PhysPageNum) -> usize;
     /// get the bytes array of a physical page number
     fn get_bytes_array(ppn: PhysPageNum) -> &'static mut [u8];
     /// find the page table entry without creating it
@@ -107,6 +109,10 @@ impl<T: PTOps> PageTable<T> {
             frames: Vec::new(),
             phantom: PhantomData,
         }
+    }
+
+    pub fn token(&self) -> usize {
+        self.root_ppn.into()
     }
 
     /// map a virtual page number to a physical page number with given flags
