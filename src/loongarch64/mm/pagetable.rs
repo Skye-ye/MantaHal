@@ -15,7 +15,7 @@ bitflags::bitflags! {
     pub struct Loongarch64PTEFlags: usize {
         /// Page Valid
         const V = bit!(0);
-        /// Dirty, The page has been writed.
+        /// Dirty, The page has been written.
         const D = bit!(1);
         /// Privilege level
         const PLV = bit!(2) | bit!(3);
