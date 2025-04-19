@@ -1,8 +1,8 @@
 pub mod addr;
-pub mod frame_allocator;
-pub mod heap_allocator;
 pub mod pagetable;
 pub mod tlb;
+
+use loongArch64::register::tlbrentry;
 
 use super::config::{
     csr::{PWCH, PWCL},
@@ -13,11 +13,10 @@ use super::config::{
 };
 use crate::write_csr_loong;
 
-use heap_allocator::init_heap_allocator;
-
-pub fn init() {
+pub fn mm_init(tlbrentry: usize) {
+    tlb::tlb_init();
     setup_ptwalker();
-    init_heap_allocator();
+    tlb::set_tlb_refill(tlbrentry);
 }
 
 /// Setup multi-level page table walker (pwcl, pwch, pgdh, pgdl)

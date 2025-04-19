@@ -6,16 +6,19 @@ static mut BOOT_STACK: [u8; KERNEL_STACK_SIZE * MAX_HARTS] = [0u8; KERNEL_STACK_
 #[naked]
 #[unsafe(no_mangle)]
 #[unsafe(link_section = ".text.entry")]
-unsafe extern "C" fn _start(hart_id: usize, dtb_addr: usize) -> ! {
+unsafe extern "C" fn _start() -> ! {
     unsafe {
         core::arch::naked_asm!("
-            ori         $t0, $zero, 0x1     # CSR_DMW1_PLV0
+            ori         $t0, $zero, 0x1     # CSR_DMW0_PLV0
             lu52i.d     $t0, $t0, -2048     # UC, PLV0, 0x8000 0000 0000 0001
             csrwr       $t0, {dmw0}         # LOONGARCH_CSR_DMW0
             ori         $t0, $zero, 0x11    # CSR_DMW1_MAT | CSR_DMW1_PLV0
             lu52i.d     $t0, $t0, -1792     # CA, PLV0, 0x9000 0000 0000 0011
             csrwr       $t0, {dmw1}         # LOONGARCH_CSR_DMW1
-
+            ori         $t0, $zero, 0x0     
+            csrwr       $t0, {dmw2}         # LOONGARCH_CSR_DMW2
+            csrwr       $t0, {dmw3}         # LOONGARCH_CSR_DMW3
+            csrwr       $t0, {tlb_rentry}    # LOONGARCH_CSR_TLBRENTRY
             # Goto 1 if hart is not 0
             csrrd       $t1, {cpu_id}       # read cpu from csr
             bnez        $t1, 1f
@@ -27,6 +30,7 @@ unsafe extern "C" fn _start(hart_id: usize, dtb_addr: usize) -> ! {
             csrwr		$t0, {prmd}     # LOONGARCH_CSR_PRMD
             li.w		$t0, 0x00		# FPE=0, SXE=0, ASXE=0, BTE=0
             csrwr		$t0, {euen}     # LOONGARCH_CSR_EUEN
+            invtlb      0x0, $zero, $zero
 
 
             la.global   $sp, {boot_stack}
@@ -45,6 +49,9 @@ unsafe extern "C" fn _start(hart_id: usize, dtb_addr: usize) -> ! {
             ",
             dmw0 = const csr::DMW0,
             dmw1 = const csr::DMW1,
+            dmw2 = const csr::DMW2,
+            dmw3 = const csr::DMW3,
+            tlb_rentry = const csr::TLBRENTRY,
             cpu_id = const csr::CPUID,
             crmd = const csr::CRMD,
             prmd = const csr::PRMD,
@@ -60,13 +67,13 @@ unsafe extern "C" fn _start(hart_id: usize, dtb_addr: usize) -> ! {
 
 // Main entry point after initialization
 #[unsafe(no_mangle)]
-pub fn rust_main(hart_id: usize, dtb_addr: usize) -> ! {
+pub fn rust_main(hart_id: usize) -> ! {
     // Placeholder
     loop {}
 }
 
 #[unsafe(no_mangle)]
-pub fn rust_secondary_main(hart_id: usize, dtb_addr: usize) -> ! {
+pub fn rust_secondary_main(hart_id: usize) -> ! {
     // Placeholder
     loop {}
 }
