@@ -1,6 +1,6 @@
+use crate::arch::config::mm::PAGE_SIZE_BITS;
 use crate::common::addr::VirtAddr;
 use crate::common::tlb::{TLB, TLBOperation};
-use crate::config::mm::PAGE_SIZE_BITS;
 use loongArch64::register::{stlbps, tlbidx, tlbrehi, tlbrentry};
 
 /// TLB operations

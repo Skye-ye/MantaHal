@@ -2,9 +2,7 @@ pub mod addr;
 pub mod pagetable;
 pub mod tlb;
 
-use loongArch64::register::tlbrentry;
-
-use super::config::{
+use crate::arch::config::{
     csr::{PWCH, PWCL},
     mm::{
         DIR_1_SHIFT, DIR_2_SHIFT, DIR_3_SHIFT, DIR_4_SHIFT, PAGE_SHIFT, PAGE_TABLE_LEVELS,

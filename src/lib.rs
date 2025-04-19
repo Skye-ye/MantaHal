@@ -11,6 +11,13 @@ mod utils;
 
 arch_modules![("riscv64", riscv64), ("loongarch64", loongarch64)];
 
+pub mod arch {
+    #[cfg(target_arch = "loongarch64")]
+    pub use crate::loongarch64::*;
+    #[cfg(target_arch = "riscv64")]
+    pub use crate::riscv64::*;
+}
+
 pub trait HAL {
     /// initialize the hardware
     fn init();

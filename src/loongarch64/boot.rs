@@ -1,4 +1,4 @@
-use super::config::{board::MAX_HARTS, csr, mm::KERNEL_STACK_SIZE};
+use crate::arch::config::{board::MAX_HARTS, csr, mm::KERNEL_STACK_SIZE};
 
 #[unsafe(link_section = ".bss.stack")]
 static mut BOOT_STACK: [u8; KERNEL_STACK_SIZE * MAX_HARTS] = [0u8; KERNEL_STACK_SIZE * MAX_HARTS];

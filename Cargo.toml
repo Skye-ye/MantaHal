@@ -8,11 +8,13 @@ authors = ["Sky Zheng <skyzheng@whu.edu.cn>"]
 bitflags = "2.9.0"
 spin = "0.10.0"
 buddy_system_allocator = "0.11.0"
+log = "0.4"
 
 [features]
-default = ["irq", "debug"]
+default = ["irq", "debug", "log"]
 irq = []
 debug = []
+log = []
 
 [target.'cfg(target_arch = "riscv64")'.dependencies]
 riscv = "0.13.0"
