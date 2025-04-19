@@ -6,9 +6,6 @@ macro_rules! arch_modules {
         $(
             #[cfg(target_arch = $arch)]
             mod $module;
-
-            #[cfg(target_arch = $arch)]
-            pub use $module::*;
         )*
     };
 }

@@ -93,7 +93,7 @@ unsafe extern "C" fn context_switch_pt(from: *mut KContext, to: *const KContext,
             restore_callee_regs!(),
             // Return to the caller
             "ret",
-            pgdh = const super::config::csr::PGDH,
+            pgdh = const crate::arch::config::csr::PGDH,
         );
     }
 }

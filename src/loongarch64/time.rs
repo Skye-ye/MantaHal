@@ -1,4 +1,4 @@
-use crate::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
+use crate::arch::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 use core::time::Duration;
 use loongArch64::register::tcfg;
 use loongArch64::time::Time;

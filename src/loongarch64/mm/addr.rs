@@ -1,11 +1,11 @@
 //! Address space for LoongArch64
 //!
 //! This module implements basic address space operations for LoongArch64.
-use crate::common::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
-use crate::common::pagetable::PageTableEntry;
-use crate::config::mm::{
+use crate::arch::config::mm::{
     PA_MASK, PAGE_MASK, PAGE_SIZE, PAGE_SIZE_BITS, PPN_MASK, PTES_PER_PAGE, VA_MASK, VPN_MASK,
 };
+use crate::common::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
+use crate::common::pagetable::PageTableEntry;
 
 // PhysAddr implementations
 impl PhysAddr {

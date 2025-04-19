@@ -1,12 +1,12 @@
+use crate::arch::config::mm::{
+    PAGE_SIZE, PAGE_TABLE_LEVELS, PPN_MASK, PPN_OFFSET_IN_PTE, PTE_INDEX_BITS, PTE_INDEX_MASK,
+};
 use crate::bit;
 use crate::common::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
 use crate::common::frame_allocator::{FrameTracker, frame_alloc};
 use crate::common::pagetable::PTEFlags;
 use crate::common::pagetable::PTOps;
 use crate::common::pagetable::PageTableEntry;
-use crate::config::mm::{
-    PAGE_SIZE, PAGE_TABLE_LEVELS, PPN_MASK, PPN_OFFSET_IN_PTE, PTE_INDEX_BITS, PTE_INDEX_MASK,
-};
 use alloc::vec::Vec;
 
 bitflags::bitflags! {
