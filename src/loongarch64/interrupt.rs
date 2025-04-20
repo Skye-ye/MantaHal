@@ -1,5 +1,5 @@
 use loongArch64::register::ecfg::LineBasedInterrupt;
-use loongArch64::register::{crmd, ecfg};
+use loongArch64::register::{crmd, ecfg, eentry};
 
 fn hardware_interrupts_bits() -> LineBasedInterrupt {
     LineBasedInterrupt::HWI0
@@ -10,6 +10,16 @@ fn hardware_interrupts_bits() -> LineBasedInterrupt {
         | LineBasedInterrupt::HWI5
         | LineBasedInterrupt::HWI6
         | LineBasedInterrupt::HWI7
+}
+
+// vs: 3-bit : set the spacing between interrupts entry
+// 0 means share the same entry
+// base_enrty : base(31-12) | 0(11-0)
+pub fn interrupt_init(vs: usize, base_entry: usize) {
+    ecfg::set_vs(vs);
+    // enable all
+        set_local_interrupt(0x1ff);
+        eentry::set_eentry(base_entry);
 }
 
 // global interrupt status
@@ -30,7 +40,7 @@ pub unsafe fn disable_interrupt() {
 
 // local interrupt
 // set interrupt status as bits input (the most flexible one)
-pub unsafe fn set_local_interrupt(new_set: usize) {
+pub fn set_local_interrupt(new_set: usize) {
     let interrupt_flags = match LineBasedInterrupt::from_bits(new_set) {
         Some(flags) => flags,
         None => {
@@ -83,4 +93,20 @@ pub unsafe fn disable_hardware_interrupt() {
     let cur_lie = ecfg::read().lie();
     let new_lie = cur_lie & !hardware_interrupts_bits();
     ecfg::set_lie(new_lie);
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct IRQVector(pub(crate) usize);
+
+impl IRQVector {
+    /// Get the irq number in this vector
+    #[inline]
+    pub fn irq_num(&self) -> usize {
+        unimplemented!()
+    }
+
+    /// Acknowledge the irq
+    pub fn ack(&self) {
+        unimplemented!()
+    }
 }
