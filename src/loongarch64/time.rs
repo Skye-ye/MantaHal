@@ -1,7 +1,7 @@
-use crate::arch::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 use core::time::Duration;
-use loongArch64::register::tcfg;
+use loongArch64::register::{tcfg, ticlr};
 use loongArch64::time::Time;
+use crate::arch::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 
 pub fn get_time() -> usize {
     Time::read()
@@ -46,9 +46,13 @@ pub fn init_timer() {
 
 // enable decrement
 pub unsafe fn enable_timer() {
-    tcfg::set_en(true);
+        tcfg::set_en(true);
 }
 
 pub unsafe fn disable_timer() {
-    tcfg::set_en(false);
+        tcfg::set_en(false);
+}
+
+pub fn clear_timer() {
+    ticlr::clear_timer_interrupt();
 }
