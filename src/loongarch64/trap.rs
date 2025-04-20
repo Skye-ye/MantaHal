@@ -1,6 +1,7 @@
 use core::arch::{global_asm, naked_asm};
-use crate::{interrupt, trapframe, time, handler};
-use crate::handler::{EscapeReason, TrapType};
+use crate::arch::{interrupt, trapframe, time, handler};
+use crate::arch::config::{time::TIMER_IRQ, trapframe::{KERNEL_TRAPFRAME_SIZE, TRAPFRAME_SIZE}};
+use crate::arch::handler::{EscapeReason, TrapType};
 use loongArch64::register::estat::{self, Exception, Trap};
 use loongArch64::register::badv;
 
@@ -24,7 +25,7 @@ pub unsafe extern "C" fn user_vec() {
                 addi.d  $sp, $sp, {kernel_trapframe_size}
                 ret                       // goto run_user_task
             ",
-            kernel_trapframe_size = const trapframe::KERNEL_TRAPFRAME_SIZE
+            kernel_trapframe_size = const KERNEL_TRAPFRAME_SIZE
         )
     }
 }
@@ -45,7 +46,7 @@ pub extern "C" fn user_restore(context: *mut trapframe::TrapFrame) {
                 LOAD_REGS
                 ertn
             ",
-            kernel_trapframe_size = const trapframe::KERNEL_TRAPFRAME_SIZE,
+            kernel_trapframe_size = const KERNEL_TRAPFRAME_SIZE,
         )
         
     }
@@ -83,7 +84,7 @@ pub unsafe extern "C" fn trap_vector_base() {
             LOAD_REGS
             ertn
             ",
-            trapframe_size = const trapframe::TRAPFRAME_SIZE,
+            trapframe_size = const TRAPFRAME_SIZE,
             user_vec = sym user_vec,
             trap_handler = sym loongarch64_trap_handler,
         )
@@ -107,7 +108,7 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> TrapType {
             let irq_num: usize = estat.is().trailing_zeros() as usize;
             match irq_num {
                 // TIMER_IRQ
-                time::TIMER_IRQ => {
+                TIMER_IRQ => {
                     time::clear_timer();
                     TrapType::Timer
                 }

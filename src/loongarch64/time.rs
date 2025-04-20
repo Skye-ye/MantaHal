@@ -1,10 +1,7 @@
 use core::time::Duration;
 use loongArch64::register::{tcfg, ticlr};
 use loongArch64::time::Time;
-use crate::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
-
-/// Timer IRQ of loongarch64
-pub const TIMER_IRQ: usize = 11;
+use crate::arch::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 
 pub fn get_time() -> usize {
     Time::read()

@@ -6,7 +6,6 @@ pub mod kcontext;
 pub mod macros;
 pub mod mm;
 pub mod time;
-pub mod interrupt;
 pub mod trapframe;
 pub mod trap;
 pub mod handler;

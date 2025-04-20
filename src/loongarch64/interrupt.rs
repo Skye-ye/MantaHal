@@ -106,7 +106,7 @@ impl IRQVector {
     }
 
     /// Acknowledge the irq
-    pub fn ack(&self) {
+    pub fn irq_ack(&self) {
         unimplemented!()
     }
 }
