@@ -1,7 +1,7 @@
 use core::arch::{global_asm, naked_asm};
 use crate::arch::{interrupt, trapframe, time, handler};
 use crate::arch::config::{time::TIMER_IRQ, trapframe::{KERNEL_TRAPFRAME_SIZE, TRAPFRAME_SIZE}};
-use crate::arch::handler::{EscapeReason, TrapType};
+use crate::arch::handler::HandleType;
 use loongArch64::register::estat::{self, Exception, Trap};
 use loongArch64::register::badv;
 
@@ -54,10 +54,10 @@ pub extern "C" fn user_restore(context: *mut trapframe::TrapFrame) {
 
 /// 1、the first time transform to user mode
 /// 2、when user trap in kernel, it will trap into the context of this function
-pub fn run_user_task(context: &mut trapframe::TrapFrame) -> EscapeReason {
+pub fn run_user_task(context: &mut trapframe::TrapFrame) -> HandleType {
     user_restore(context);
     // user trap arrive here
-    loongarch64_trap_handler(context).into()
+    loongarch64_trap_handler(context)
 }
 
 
@@ -91,46 +91,71 @@ pub unsafe extern "C" fn trap_vector_base() {
     }
 }
 
-/// classify the trap type and handle it
-fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> TrapType {
+/// classify the trap type to handle type and pass it to specify handler
+fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
     let estat = estat::read();
-    let trap_type = match estat.cause() {
-        Trap::Exception(Exception::Breakpoint) => {
-            tf.era += 4;
-            TrapType::Breakpoint
-        }
-        Trap::Exception(Exception::AddressNotAligned) => {
-            // error!("address not aligned: {:#x?}", tf);
-            //unimplemented!();
-            TrapType::Unknown
-        }
+    let trap= estat.cause();
+    let mut token: usize = 0;
+
+    let handle_type = match trap {
+        // Interrupt
         Trap::Interrupt(_) => {
             let irq_num: usize = estat.is().trailing_zeros() as usize;
             match irq_num {
                 // TIMER_IRQ
                 TIMER_IRQ => {
                     time::clear_timer();
-                    TrapType::Timer
+                    HandleType::Time
                 }
-                _ => panic!("unknown interrupt: {}", irq_num),
+                // others
+                _ => {
+                    unimplemented!();
+                    panic!("unknown interrupt: {}", irq_num)
+                }
             }
         }
-        Trap::Exception(Exception::Syscall) => TrapType::SysCall,
-        Trap::Exception(Exception::StorePageFault)
-        | Trap::Exception(Exception::PageModifyFault) => {
-            TrapType::StorePageFault(badv::read().vaddr())
+
+        Trap::Exception(page_fault @ (
+            Exception::LoadPageFault |
+            Exception::StorePageFault |
+            Exception::FetchPageFault |
+            Exception::PageModifyFault |
+            Exception::PageNonReadableFault |
+            Exception::PageNonExecutableFault |
+            Exception::PagePrivilegeIllegal
+        )) => {
+            token = page_fault as usize;
+            HandleType::PageFault
         }
-        Trap::Exception(Exception::PageNonExecutableFault)
-        | Trap::Exception(Exception::FetchPageFault) => {
-            TrapType::InstructionPageFault(badv::read().vaddr())
+
+        Trap::Exception(address_error @ (
+            Exception::FetchInstructionAddressError |
+            Exception::MemoryAccessAddressError |
+            Exception::AddressNotAligned |
+            Exception::BoundsCheckFault
+        )) => {
+            token = (address_error as usize) - 7;
+            HandleType::AddressError
         }
-        // Load Fault
-        Trap::Exception(Exception::LoadPageFault)
-        | Trap::Exception(Exception::PageNonReadableFault) => {
-            TrapType::LoadPageFault(badv::read().vaddr())
+
+        Trap::Exception(Exception::Syscall) => HandleType::SysCall,
+
+        Trap::Exception(Exception::Breakpoint) => {
+            tf.era += 4;
+            HandleType::DeBug
         }
+
+        Trap::Exception(instr_error @ (
+            Exception::InstructionNotExist |
+            Exception::InstructionPrivilegeIllegal |
+            Exception::FloatingPointUnavailable
+        )) => {
+            token = (instr_error as usize) - 13;
+            HandleType::InstrError
+        }
+
         Trap::MachineError(_) => todo!(),
-        Trap::Unknown => todo!(),
+        Trap::Unknown => todo!(),    
         _ => {
             panic!(
                 "Unhandled trap {:?} @ {:#x} BADV: {:#x}:\n{:#x?}",
@@ -142,8 +167,8 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> TrapType {
         }
     };
 
-    handler::specific_handler(tf, trap_type, 0);
-    trap_type
+    handler::specify_handler(tf, handle_type, token);
+    handle_type
 }
 
 global_asm!{
