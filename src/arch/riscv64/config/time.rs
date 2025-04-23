@@ -1,0 +1,1 @@
+pub const INTERRUPTS_PER_SECOND: usize = 100;
