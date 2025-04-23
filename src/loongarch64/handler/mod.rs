@@ -1,39 +1,48 @@
+// mod.rs
+pub mod exc_addr;
+pub mod exc_debug;
+pub mod exc_instr;
+pub mod exc_page;     // page fault
+pub mod exc_syscall;
+pub mod exc_tlb;
+pub mod irq_time;
+
 use crate::arch::interrupt::IRQVector;
 use crate::arch::trapframe::TrapFrame;
 
-// specific trap type still need to be well defined
-#[derive(Debug, Clone, Copy)]
-pub enum TrapType {
-    Breakpoint,
-    SysCall,
-    Timer,
-    Unknown,
-    SupervisorExternal,
-    StorePageFault(usize),
-    LoadPageFault(usize),
-    InstructionPageFault(usize),
-    IllegalInstruction(usize),
-    Irq(IRQVector),
-}
-
+/// transfrom trap type to handler-suitable type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EscapeReason {
-    NoReason,
-    IRQ,
-    Timer,
-    SysCall,
+pub enum HandleType {
+    NoReason = 0,
+    IRQ = 1,
+    Time = 2,
+    SysCall = 3,
+    DeBug = 4,          // to avoid keyword conflict
+    PageFault = 5,      // 0-6
+    AddressError = 6,   // 0-3
+    InstrError = 7,     // 0-2
+    TLBRefill = 8      // 0
 }
 
-// TODO: Implement Into EscapeReason
-impl Into<EscapeReason> for TrapType {
-    fn into(self) -> EscapeReason {
-        match self {
-            TrapType::SysCall => EscapeReason::SysCall,
-            _ => EscapeReason::NoReason,
-        }
-    }
-}
+pub type HandlerFn = fn(&mut TrapFrame, usize);
 
-pub fn specific_handler(tf: &mut TrapFrame, trap_type: TrapType, token: usize) {
-    unimplemented!()
+/// handler array
+static HANDLERS: [HandlerFn; 9] = [
+    |_, _| {},                // NoReason
+    |_, _| {},                // IRQ
+    irq_time::handler,        // Time
+    exc_syscall::handler,     // SysCall
+    exc_debug::handler,       // DeBug
+    exc_page::handler,        // PageFault
+    exc_addr::handler,        // AddressError
+    exc_instr::handler,       // InstrError
+    exc_tlb::handler,         // TLBRefill
+];
+
+/// tf: context
+/// handle_type: which handler to call
+/// token: specific token for the handler
+pub fn specify_handler(tf: &mut TrapFrame, handle_type: HandleType, token: usize) {
+    let handler = HANDLERS[handle_type as usize];
+    handler(tf, token);
 }
