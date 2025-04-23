@@ -1,8 +1,8 @@
 // mod.rs
-pub mod exc_addr;     // 公开模块
+pub mod exc_addr;
 pub mod exc_debug;
 pub mod exc_instr;
-pub mod exc_page;     // 你的页错误处理模块
+pub mod exc_page;     // page fault
 pub mod exc_syscall;
 pub mod exc_tlb;
 pub mod irq_time;

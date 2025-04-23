@@ -155,7 +155,7 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
         }
 
         Trap::MachineError(_) => todo!(),
-        Trap::Unknown => todo!(),    
+        Trap::Unknown => todo!(),
         _ => {
             panic!(
                 "Unhandled trap {:?} @ {:#x} BADV: {:#x}:\n{:#x?}",
