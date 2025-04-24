@@ -1,3 +1,4 @@
+use crate::arch::config::mm::{PAGE_TABLE_LEVELS, PTE_INDEX_BITS, PTE_INDEX_MASK};
 #[cfg(feature = "debug")]
 use core::fmt::{Debug, Formatter};
 
@@ -60,6 +61,64 @@ impl VirtPageNum {
 impl PhysPageNum {
     pub fn step(&mut self) {
         self.0 += 1;
+    }
+}
+
+impl PhysAddr {
+    /// Converts the physical address to a raw pointer.
+    fn as_ptr<T>(&self) -> *const T {
+        self.0 as *const T
+    }
+
+    /// Converts the physical address to a mutable raw pointer.
+    fn as_mut_ptr<T>(&self) -> *mut T {
+        self.0 as *mut T
+    }
+
+    /// Unsafe: Converts the physical address to a reference of type U.
+    ///
+    /// # Safety
+    /// The caller must ensure that:
+    /// 1. The physical address points to valid, initialized memory for type `U`.
+    /// 2. The address has the correct alignment for type `U`.
+    /// 3. The memory is accessible (e.g., kernel direct-mapped region).
+    /// 4. The resulting reference does not outlive the validity of the underlying memory.
+    ///    The `'static` lifetime is a promise that the caller must uphold regarding
+    ///    the actual lifetime of the physical memory.
+    /// 5. No other mutable references to this location exist.
+    #[inline]
+    pub unsafe fn as_ref<U>(&self) -> &'static U {
+        // SAFETY: Caller guarantees validity, alignment, accessibility, lifetime, and no mutable aliases.
+        unsafe { &*self.as_ptr::<U>() }
+    }
+
+    /// Unsafe: Converts the physical address to a mutable reference of type U.
+    ///
+    /// # Safety
+    /// The caller must ensure that:
+    /// 1. The physical address points to valid, initialized memory for type `U`.
+    /// 2. The address has the correct alignment for type `U`.
+    /// 3. The memory is accessible and writable.
+    /// 4. The resulting reference does not outlive the validity of the underlying memory.
+    ///    The `'static` lifetime is a promise that the caller must uphold.
+    /// 5. No other references (mutable or immutable) to this location exist.
+    ///    This upholds Rust's borrowing rules manually.
+    #[inline]
+    pub unsafe fn as_mut<U>(&self) -> &'static mut U {
+        // SAFETY: Caller guarantees validity, alignment, accessibility, lifetime, and exclusivity.
+        unsafe { &mut *self.as_mut_ptr::<U>() }
+    }
+}
+
+impl VirtPageNum {
+    pub fn indices(&self) -> [usize; PAGE_TABLE_LEVELS] {
+        let mut indices = [0; PAGE_TABLE_LEVELS];
+        let mut vpn = self.0;
+        for i in (0..PAGE_TABLE_LEVELS).rev() {
+            indices[i] = vpn & PTE_INDEX_MASK;
+            vpn >>= PTE_INDEX_BITS;
+        }
+        indices
     }
 }
 

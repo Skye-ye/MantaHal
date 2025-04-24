@@ -2,10 +2,9 @@
 //!
 //! This module implements basic address space operations for LoongArch64.
 use crate::arch::config::mm::{
-    PA_MASK, PAGE_MASK, PAGE_SIZE, PAGE_SIZE_BITS, PPN_MASK, PTES_PER_PAGE, VA_MASK, VPN_MASK,
+    PA_MASK, PAGE_MASK, PAGE_SIZE, PAGE_SIZE_BITS, PPN_MASK, VA_MASK, VPN_MASK,
 };
 use crate::common::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
-use crate::common::pagetable::PageTableEntry;
 
 // PhysAddr implementations
 impl PhysAddr {
@@ -110,17 +109,5 @@ impl From<VirtPageNum> for VirtAddr {
     #[inline]
     fn from(v: VirtPageNum) -> Self {
         Self(v.0 << PAGE_SIZE_BITS)
-    }
-}
-
-impl PhysPageNum {
-    pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
-        let pa: PhysAddr = (*self).into();
-        unsafe { core::slice::from_raw_parts_mut(pa.0 as *mut PageTableEntry, PTES_PER_PAGE) }
-    }
-
-    pub fn get_mut<T>(&self) -> &'static mut T {
-        let pa: PhysAddr = (*self).into();
-        pa.get_mut()
     }
 }

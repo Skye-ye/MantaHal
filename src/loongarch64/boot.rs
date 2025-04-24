@@ -7,6 +7,7 @@ static mut BOOT_STACK: [u8; KERNEL_STACK_SIZE * MAX_HARTS] = [0u8; KERNEL_STACK_
 #[unsafe(no_mangle)]
 #[unsafe(link_section = ".text.entry")]
 unsafe extern "C" fn _start() -> ! {
+    // TODO: boot
     unsafe {
         core::arch::naked_asm!("
             ori         $t0, $zero, 0x1     # CSR_DMW0_PLV0
@@ -18,7 +19,7 @@ unsafe extern "C" fn _start() -> ! {
             ori         $t0, $zero, 0x0     
             csrwr       $t0, {dmw2}         # LOONGARCH_CSR_DMW2
             csrwr       $t0, {dmw3}         # LOONGARCH_CSR_DMW3
-            csrwr       $t0, {tlb_rentry}    # LOONGARCH_CSR_TLBRENTRY
+            csrwr       $t0, {tlb_rentry}   # LOONGARCH_CSR_TLBRENTRY
             # Goto 1 if hart is not 0
             csrrd       $t1, {cpu_id}       # read cpu from csr
             bnez        $t1, 1f
