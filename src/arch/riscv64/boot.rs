@@ -1,13 +1,17 @@
-use config::mm::KERNEL_STACK_SIZE;
+use super::config::mm::{KERNEL_STACK_SIZE, PTES_PER_PAGE};
+use super::config::board::MAX_HARTS;
 
-use crate::{
-    config::{
-        board,
-        board::MAX_HARTS,
-        mm::{HART_START_ADDR, PTES_PER_PAGE, VIRT_RAM_OFFSET},
-    },
-    debug_console::println,
-};
+use crate::arch::config::mm::{HART_START_ADDR, VIRT_RAM_OFFSET};
+// use crate::arch::{
+//     config::{
+//         board,
+//         board::MAX_HARTS,
+//         mm::{HART_START_ADDR, PTES_PER_PAGE, VIRT_RAM_OFFSET},
+//     },
+// };
+use crate::println;
+
+
 const BOOT_BANNER: &str = r#"
  __  __    _    _   _ _____  _    
 |  \/  |  / \  | \ | |_   _|/ \   
@@ -44,7 +48,7 @@ pub fn clear_bss() {
 
 #[allow(unused)]
 pub fn start_other_harts(hart_id: usize) {
-    for i in 0..board::harts() {
+    for i in 0..MAX_HARTS {
         if i == hart_id {
             continue;
         }

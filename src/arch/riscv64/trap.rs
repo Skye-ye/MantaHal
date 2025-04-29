@@ -74,3 +74,5 @@ pub fn trap_handler(cx: &mut TrapFrame) -> TrapType {
     handler::specific_handler(cx, trap_type, 0);
     trap_type
 }
+
+//TODO: 修改kernel_trap让他成为陷入的统一入口，需要修改trap.asm

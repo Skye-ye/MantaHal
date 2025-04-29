@@ -3,6 +3,8 @@ use core::{
     ops::{Index, IndexMut},
 };
 
+use crate::common::pagetable::PageTable;
+
 // use crate::PageTable;
 
 
@@ -108,10 +110,10 @@ pub unsafe extern "C" fn context_switch(from: *mut KContext, to: *const KContext
 ///
 /// Save the context of current task and switch to new task.
 #[inline]
-pub unsafe extern "C" fn context_switch_pt(
+pub unsafe extern "C" fn context_switch_pt<T>(
     from: *mut KContext,
     to: *const KContext,
-    pt_token: PageTable,
+    pt_token: PageTable<T>,
 ) {
     context_switch_pt_impl(from, to, pt_token.0.0);
 }
@@ -154,3 +156,5 @@ pub extern "C" fn read_current_tp() -> usize {
         )
     }
 }
+
+//kcontext
