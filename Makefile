@@ -16,3 +16,27 @@ build_docker:
 PHONY += docker
 docker:
 	docker $(DOCKER_RUN_ARGS)
+
+
+PHONY += test-build
+test-build:
+	cargo build --all-features --target riscv64gc-unknown-none-elf
+	cargo build --all-features --target loongarch64-unknown-none
+
+PHONY += test-build-release
+test-build-release:
+	cargo build --release --all-features --target riscv64gc-unknown-none-elf
+	cargo build --release --all-features --target loongarch64-unknown-none
+
+PHONY += test-clippy
+test-clippy:
+	cargo clippy --all-features --target riscv64gc-unknown-none-elf
+	cargo clippy --all-features --target loongarch64-unknown-none
+
+PHONY += fmt
+fmt:
+	cargo fmt
+
+PHONY += clean
+clean:
+	cargo clean

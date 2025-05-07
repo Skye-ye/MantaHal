@@ -1,11 +1,12 @@
+pub mod arch;
 pub mod boot;
 pub mod config;
 pub mod console;
+pub mod handler;
 pub mod interrupt;
 pub mod kcontext;
 pub mod macros;
 pub mod mm;
 pub mod time;
-pub mod trapframe;
 pub mod trap;
-pub mod handler;
+pub mod trapframe;

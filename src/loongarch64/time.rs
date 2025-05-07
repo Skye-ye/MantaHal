@@ -1,7 +1,7 @@
+use crate::arch::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 use core::time::Duration;
 use loongArch64::register::{tcfg, ticlr};
 use loongArch64::time::Time;
-use crate::arch::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 
 pub fn get_time() -> usize {
     Time::read()
@@ -23,15 +23,15 @@ pub fn get_time_duration() -> Duration {
     Duration::from_micros(get_time_us() as u64)
 }
 
-// reset
-pub unsafe fn set_next_time_irq() {
-    let next_trigger: usize = ((CLOCK_FREQ / INTERRUPTS_PER_SECOND) + 3) & !3 as usize;
+/// reset
+pub fn set_next_time_irq() {
+    let next_trigger: usize = ((CLOCK_FREQ / INTERRUPTS_PER_SECOND) + 3) & !3;
     tcfg::set_init_val(next_trigger);
 }
 
-// set a longer time slice
-pub unsafe fn set_timer_irq(times: usize) {
-    let next_trigger: usize = ((times * CLOCK_FREQ / INTERRUPTS_PER_SECOND) + 3) & !3 as usize;
+/// set a longer time slice
+pub fn set_timer_irq(times: usize) {
+    let next_trigger: usize = ((times * CLOCK_FREQ / INTERRUPTS_PER_SECOND) + 3) & !3;
     tcfg::set_init_val(next_trigger);
 }
 
@@ -44,13 +44,14 @@ pub fn init_timer() {
     // interrupt enable implemented in other file
 }
 
-// enable decrement
-pub unsafe fn enable_timer() {
-        tcfg::set_en(true);
+/// enable decrement
+pub fn enable_timer() {
+    tcfg::set_en(true);
 }
 
-pub unsafe fn disable_timer() {
-        tcfg::set_en(false);
+/// disable timer
+pub fn disable_timer() {
+    tcfg::set_en(false);
 }
 
 pub fn clear_timer() {

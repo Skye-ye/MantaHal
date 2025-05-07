@@ -1,2 +1,4 @@
 pub mod macro_utils;
-pub mod static_cell;
+pub mod once_cell;
+
+pub type OnceCell<T = ()> = once_cell::OnceCell<T>;
