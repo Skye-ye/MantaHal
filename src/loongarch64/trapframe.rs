@@ -1,35 +1,91 @@
-use core::arch::global_asm;
-use core::ops::{Index, IndexMut};
+/// General registers of Loongarch64.
+#[allow(missing_docs)]
+#[repr(C)]
+#[derive(Debug, Default, Clone, Copy)]
+pub struct GeneralRegisters {
+    pub zero: usize,
+    pub ra: usize,
+    pub tp: usize,
+    pub sp: usize,
+    pub a0: usize,
+    pub a1: usize,
+    pub a2: usize,
+    pub a3: usize,
+    pub a4: usize,
+    pub a5: usize,
+    pub a6: usize,
+    pub a7: usize,
+    pub t0: usize,
+    pub t1: usize,
+    pub t2: usize,
+    pub t3: usize,
+    pub t4: usize,
+    pub t5: usize,
+    pub t6: usize,
+    pub t7: usize,
+    pub t8: usize,
+    pub u0: usize,
+    pub fp: usize,
+    pub s0: usize,
+    pub s1: usize,
+    pub s2: usize,
+    pub s3: usize,
+    pub s4: usize,
+    pub s5: usize,
+    pub s6: usize,
+    pub s7: usize,
+    pub s8: usize,
+}
 
-/// User to kernel trap frame
+#[cfg(feature = "fp")]
+/// Floating point registers of Loongarch64.
+#[derive(Debug, Default, Clone, Copy)]
+#[repr(C)]
+pub struct FloatingPointRegisters {
+    pub fa0: f64,
+    pub fa1: f64,
+    pub fa2: f64,
+    pub fa3: f64,
+    pub fa4: f64,
+    pub fa5: f64,
+    pub fa6: f64,
+    pub fa7: f64,
+    pub ft0: f64,
+    pub ft1: f64,
+    pub ft2: f64,
+    pub ft3: f64,
+    pub ft4: f64,
+    pub ft5: f64,
+    pub ft6: f64,
+    pub ft7: f64,
+    pub ft8: f64,
+    pub ft9: f64,
+    pub ft10: f64,
+    pub ft11: f64,
+    pub ft12: f64,
+    pub ft13: f64,
+    pub ft14: f64,
+    pub ft15: f64,
+    pub fs0: f64,
+    pub fs1: f64,
+    pub fs2: f64,
+    pub fs3: f64,
+    pub fs4: f64,
+    pub fs5: f64,
+    pub fs6: f64,
+    pub fs7: f64,
+    pub fcsr: u32, // floating point control and status register
+}
+
+/// Saved registers when a trap (interrupt or exception) occurs.
 #[derive(Debug, Default, Clone, Copy)]
 #[repr(C)]
 pub struct TrapFrame {
-    //user to kernel
-    pub gr: [usize; 32],  //general purpose registers 0-31
-    pub era: usize,       //return address 32
-    pub prmd: usize,      //user status 33
-    pub fg: FloatContext, //float registers
-}
-
-/// Kernel trap frame
-/// only save callee saved registers
-#[derive(Debug, Default, Clone, Copy)]
-#[repr(C)]
-pub struct KernelTrapFrame {
-    pub kr: [usize; 9],   // callee saved register 0-8
-    pub sp: usize,        // stack pointer 9
-    pub ra: usize,        // return address 10
-    pub fp: usize,        // frame ptr 11
-    pub tp: usize,        // thread pointer (hart id) 12
-    pub fg: FloatContext, // float registers
-}
-
-#[derive(Debug, Default, Clone, Copy)]
-#[repr(C)]
-pub struct FloatContext {
-    pub user_fx: [f64; 32],
-    pub fcsr: u32, // floating point control and status register
+    pub gr: GeneralRegisters, // general purpose registers
+    pub era: usize,           // exception return address
+    pub prmd: usize,          // pre-exception mode information
+    #[cfg(feature = "fp")]
+    pub fr: FloatingPointRegisters, // floating point registers
 }
 
 impl TrapFrame {
@@ -41,142 +97,48 @@ impl TrapFrame {
         }
     }
 
+    /// If the syscall is successful, the return address is incremented by 4.
     pub fn syscall_ok(&mut self) {
         self.era += 4;
     }
 
     #[inline]
-    pub fn args(&self) -> [usize; 6] {
-        [
-            self.gr[4], self.gr[5], self.gr[6], self.gr[7], self.gr[8], self.gr[9],
-        ]
+    pub const fn arg0(&self) -> usize {
+        self.gr.a0
     }
-}
 
-pub enum TrapFrameArgs {
-    SEPC,
-    RA,
-    SP,
-    RET,
-    ARG0,
-    ARG1,
-    ARG2,
-    TLS,
-    SYSCALL,
-}
-
-impl Index<TrapFrameArgs> for TrapFrame {
-    type Output = usize;
-
-    fn index(&self, index: TrapFrameArgs) -> &Self::Output {
-        match index {
-            TrapFrameArgs::SEPC => &self.era,
-            TrapFrameArgs::RA => &self.gr[1],
-            TrapFrameArgs::SP => &self.gr[3],
-            TrapFrameArgs::RET => &self.gr[4],
-            TrapFrameArgs::ARG0 => &self.gr[4],
-            TrapFrameArgs::ARG1 => &self.gr[5],
-            TrapFrameArgs::ARG2 => &self.gr[6],
-            TrapFrameArgs::TLS => &self.gr[2],
-            TrapFrameArgs::SYSCALL => &self.gr[11],
-        }
+    #[inline]
+    pub const fn arg1(&self) -> usize {
+        self.gr.a1
     }
-}
 
-impl IndexMut<TrapFrameArgs> for TrapFrame {
-    fn index_mut(&mut self, index: TrapFrameArgs) -> &mut Self::Output {
-        match index {
-            TrapFrameArgs::SEPC => &mut self.era,
-            TrapFrameArgs::RA => &mut self.gr[1],
-            TrapFrameArgs::SP => &mut self.gr[3],
-            TrapFrameArgs::RET => &mut self.gr[4],
-            TrapFrameArgs::ARG0 => &mut self.gr[4],
-            TrapFrameArgs::ARG1 => &mut self.gr[5],
-            TrapFrameArgs::ARG2 => &mut self.gr[6],
-            TrapFrameArgs::TLS => &mut self.gr[2],
-            TrapFrameArgs::SYSCALL => &mut self.gr[11],
-        }
+    #[inline]
+    pub const fn arg2(&self) -> usize {
+        self.gr.a2
     }
-}
 
-global_asm! {
-    r"
-        .altmacro
+    #[inline]
+    pub const fn arg3(&self) -> usize {
+        self.gr.a3
+    }
 
-        .macro SAVE_FLOAT_REGS base_reg, offset
-            fst.d $f0,  \base_reg, \offset + 0*8
-            fst.d $f1,  \base_reg, \offset + 1*8
-            fst.d $f2,  \base_reg, \offset + 2*8
-            fst.d $f3,  \base_reg, \offset + 3*8
-            fst.d $f4,  \base_reg, \offset + 4*8
-            fst.d $f5,  \base_reg, \offset + 5*8
-            fst.d $f6,  \base_reg, \offset + 6*8
-            fst.d $f7,  \base_reg, \offset + 7*8
-            fst.d $f8,  \base_reg, \offset + 8*8
-            fst.d $f9,  \base_reg, \offset + 9*8
-            fst.d $f10, \base_reg, \offset + 10*8
-            fst.d $f11, \base_reg, \offset + 11*8
-            fst.d $f12, \base_reg, \offset + 12*8
-            fst.d $f13, \base_reg, \offset + 13*8
-            fst.d $f14, \base_reg, \offset + 14*8
-            fst.d $f15, \base_reg, \offset + 15*8
-            fst.d $f16, \base_reg, \offset + 16*8
-            fst.d $f17, \base_reg, \offset + 17*8
-            fst.d $f18, \base_reg, \offset + 18*8
-            fst.d $f19, \base_reg, \offset + 19*8
-            fst.d $f20, \base_reg, \offset + 20*8
-            fst.d $f21, \base_reg, \offset + 21*8
-            fst.d $f22, \base_reg, \offset + 22*8
-            fst.d $f23, \base_reg, \offset + 23*8
-            fst.d $f24, \base_reg, \offset + 24*8
-            fst.d $f25, \base_reg, \offset + 25*8
-            fst.d $f26, \base_reg, \offset + 26*8
-            fst.d $f27, \base_reg, \offset + 27*8
-            fst.d $f28, \base_reg, \offset + 28*8
-            fst.d $f29, \base_reg, \offset + 29*8
-            fst.d $f30, \base_reg, \offset + 30*8
-            fst.d $f31, \base_reg, \offset + 31*8
+    #[inline]
+    pub const fn arg4(&self) -> usize {
+        self.gr.a4
+    }
 
-            movfcsr2gr  $t0, $fcsr
-            st.d $t0, \base_reg, \offset + 32*8
-        .endm
-        
-        .macro LOAD_FLOAT_REGS base_reg, offset
-            fld.d $f0,  \base_reg, \offset + 0*8
-            fld.d $f1,  \base_reg, \offset + 1*8
-            fld.d $f2,  \base_reg, \offset + 2*8
-            fld.d $f3,  \base_reg, \offset + 3*8
-            fld.d $f4,  \base_reg, \offset + 4*8
-            fld.d $f5,  \base_reg, \offset + 5*8
-            fld.d $f6,  \base_reg, \offset + 6*8
-            fld.d $f7,  \base_reg, \offset + 7*8
-            fld.d $f8,  \base_reg, \offset + 8*8
-            fld.d $f9,  \base_reg, \offset + 9*8
-            fld.d $f10, \base_reg, \offset + 10*8
-            fld.d $f11, \base_reg, \offset + 11*8
-            fld.d $f12, \base_reg, \offset + 12*8
-            fld.d $f13, \base_reg, \offset + 13*8
-            fld.d $f14, \base_reg, \offset + 14*8
-            fld.d $f15, \base_reg, \offset + 15*8
-            fld.d $f16, \base_reg, \offset + 16*8
-            fld.d $f17, \base_reg, \offset + 17*8
-            fld.d $f18, \base_reg, \offset + 18*8
-            fld.d $f19, \base_reg, \offset + 19*8
-            fld.d $f20, \base_reg, \offset + 20*8
-            fld.d $f21, \base_reg, \offset + 21*8
-            fld.d $f22, \base_reg, \offset + 22*8
-            fld.d $f23, \base_reg, \offset + 23*8
-            fld.d $f24, \base_reg, \offset + 24*8
-            fld.d $f25, \base_reg, \offset + 25*8
-            fld.d $f26, \base_reg, \offset + 26*8
-            fld.d $f27, \base_reg, \offset + 27*8
-            fld.d $f28, \base_reg, \offset + 28*8
-            fld.d $f29, \base_reg, \offset + 29*8
-            fld.d $f30, \base_reg, \offset + 30*8
-            fld.d $f31, \base_reg, \offset + 31*8
-            
-            ld.d $t0, \base_reg, \offset + 32*8
-            movgr2fcsr $fcsr, $t0
-        .endm
-    "
+    #[inline]
+    pub const fn arg5(&self) -> usize {
+        self.gr.a5
+    }
+
+    #[inline]
+    pub const fn arg6(&self) -> usize {
+        self.gr.a6
+    }
+
+    #[inline]
+    pub const fn arg7(&self) -> usize {
+        self.gr.a7
+    }
 }

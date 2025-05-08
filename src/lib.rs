@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(naked_functions)]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
+#![feature(stmt_expr_attributes)]
 extern crate alloc;
 
 mod common;

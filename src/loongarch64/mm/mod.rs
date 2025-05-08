@@ -2,7 +2,7 @@ pub mod addr;
 pub mod pagetable;
 pub mod tlb;
 
-use crate::arch::config::{
+use crate::loongarch64::config::{
     csr::{PWCH, PWCL},
     mm::{
         DIR_1_SHIFT, DIR_2_SHIFT, DIR_3_SHIFT, DIR_4_SHIFT, PAGE_SHIFT, PAGE_TABLE_LEVELS,
