@@ -16,9 +16,9 @@ bitflags::bitflags! {
         /// Dirty, The page has been written.
         const D = bit!(1);
         /// Privilege level
-        const PLV = bit!(2) | bit!(3);
+        const PLV = (bit!(2)) | (bit!(3));
         /// Memory access type
-        const MAT = bit!(4) | bit!(5);
+        const MAT = (bit!(4)) | (bit!(5));
         /// Designates a global mapping.
         const G = bit!(6);
         /// Whether the page is huge page.
@@ -68,8 +68,8 @@ impl From<Loongarch64PTEFlags> for PTEFlags {
 
         // User mode if PLV indicates user (e.g., PLV == 3)
         // Assuming PLV=3 means User. Adjust if needed.
-        const PLV_USER_BITS: usize = bit!(2) | bit!(3); // PLV = 3
-        if value.bits() & (bit!(2) | bit!(3)) == PLV_USER_BITS {
+        const PLV_USER_BITS: usize = (bit!(2)) | (bit!(3)); // PLV = 3
+        if value.bits() & ((bit!(2)) | (bit!(3))) == PLV_USER_BITS {
             flags |= PTEFlags::U;
         }
 
@@ -116,7 +116,7 @@ impl From<PTEFlags> for Loongarch64PTEFlags {
 
         // Set PLV if U is requested (Assume PLV=3 for User)
         if val.contains(PTEFlags::U) {
-            const PLV_USER_BITS: usize = bit!(2) | bit!(3); // PLV = 3
+            const PLV_USER_BITS: usize = (bit!(2)) | (bit!(3)); // PLV = 3
             flags |= Loongarch64PTEFlags::from_bits_retain(PLV_USER_BITS); // Set PLV=3
         }
 

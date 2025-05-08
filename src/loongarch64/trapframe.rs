@@ -1,46 +1,40 @@
 use core::arch::global_asm;
 use core::ops::{Index, IndexMut};
 
-/// trap handle process
-///  | hardware : save crmd in prmd \ change privilege to 0 (highest level) \ disable irq \ save pc in era
-///  | goto traphandler according to eentry
-///  | retrurn
-
-#[allow(missing_docs)]
+/// User to kernel trap frame
 #[derive(Debug, Default, Clone, Copy)]
 #[repr(C)]
 pub struct TrapFrame {
     //user to kernel
-    pub gr : [usize; 32],  //general purpose registers 0-31
-    pub era : usize,       //return address 32
-    pub prmd : usize,      //user status 33
-    pub fg : FloatContext, //float registers
+    pub gr: [usize; 32],  //general purpose registers 0-31
+    pub era: usize,       //return address 32
+    pub prmd: usize,      //user status 33
+    pub fg: FloatContext, //float registers
 }
 
-/// kernel trap
+/// Kernel trap frame
 /// only save callee saved registers
 #[derive(Debug, Default, Clone, Copy)]
 #[repr(C)]
 pub struct KernelTrapFrame {
-    pub kr : [usize; 9],  // callee saved register 0-8
-    pub sp : usize,  // stack pointer 9
-    pub ra : usize,  // return address 10
-    pub fp : usize,  // frame ptr 11
-    pub tp : usize,  // thread pointer (hart id) 12
-    pub fg : FloatContext, // float registers
+    pub kr: [usize; 9],   // callee saved register 0-8
+    pub sp: usize,        // stack pointer 9
+    pub ra: usize,        // return address 10
+    pub fp: usize,        // frame ptr 11
+    pub tp: usize,        // thread pointer (hart id) 12
+    pub fg: FloatContext, // float registers
 }
-
 
 #[derive(Debug, Default, Clone, Copy)]
 #[repr(C)]
 pub struct FloatContext {
     pub user_fx: [f64; 32],
-    pub fcsr : u32, // floating point control and status register
+    pub fcsr: u32, // floating point control and status register
 }
 
 impl TrapFrame {
     #[inline]
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Self {
             prmd: (0b0111),
             ..Default::default()
@@ -54,15 +48,9 @@ impl TrapFrame {
     #[inline]
     pub fn args(&self) -> [usize; 6] {
         [
-            self.gr[4],
-            self.gr[5],
-            self.gr[6],
-            self.gr[7],
-            self.gr[8],
-            self.gr[9],
+            self.gr[4], self.gr[5], self.gr[6], self.gr[7], self.gr[8], self.gr[9],
         ]
     }
-
 }
 
 pub enum TrapFrameArgs {
@@ -111,7 +99,7 @@ impl IndexMut<TrapFrameArgs> for TrapFrame {
     }
 }
 
-global_asm!{
+global_asm! {
     r"
         .altmacro
 

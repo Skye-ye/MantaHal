@@ -60,7 +60,7 @@ pub struct KContext {
 ///
 /// Save the context of current task and switch to new task
 #[naked]
-pub unsafe extern "C" fn context_switch(from: *mut KContext, to: *const KContext) {
+pub extern "C" fn context_switch(from: *mut KContext, to: *const KContext) {
     unsafe {
         core::arch::naked_asm!(
             // Save Kernel Context.
@@ -77,7 +77,7 @@ pub unsafe extern "C" fn context_switch(from: *mut KContext, to: *const KContext
 ///
 /// Save the context of current task and switch to new task with new page table
 #[naked]
-unsafe extern "C" fn context_switch_pt(from: *mut KContext, to: *const KContext, pt_token: usize) {
+extern "C" fn context_switch_pt(from: *mut KContext, to: *const KContext, pt_token: usize) {
     unsafe {
         core::arch::naked_asm!(
             // Save Kernel Context

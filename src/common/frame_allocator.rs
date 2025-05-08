@@ -1,19 +1,10 @@
 use crate::common::addr::PhysPageNum;
-use crate::utils::static_cell::StaticCell;
+use crate::utils::OnceCell;
 use alloc::vec::Vec;
 use core::fmt::{Debug, Formatter};
 
 pub struct FrameTracker {
     pub ppn: PhysPageNum,
-}
-
-pub trait FrameAlloc: Send + Sync {
-    /// allocate a frame
-    fn alloc(&mut self) -> Option<PhysPageNum>;
-    /// allocate multiple consecutive frames
-    fn allocate_physical_pages(&mut self, pages: usize) -> Option<Vec<PhysPageNum>>;
-    /// deallocate a frame
-    fn dealloc(&mut self, ppn: PhysPageNum);
 }
 
 impl FrameTracker {
@@ -35,93 +26,69 @@ impl Debug for FrameTracker {
     }
 }
 
-pub struct StackFrameAllocator {
-    current: usize,
-    end: usize,
-    recycled: Vec<usize>,
+/// Trait for physical frame allocation.
+/// Implementations MUST handle interior mutability (e.g., using Mutex)
+/// because methods take &self but need to modify state.
+pub trait FrameAlloc: Send + Sync {
+    /// Allocate a frame.
+    /// Takes &self, requires internal synchronization if state is modified.
+    fn alloc(&self) -> Option<PhysPageNum>;
+
+    /// Allocate multiple consecutive frames.
+    /// Takes &self, requires internal synchronization if state is modified.
+    fn allocate_physical_pages(&self, pages: usize) -> Option<Vec<PhysPageNum>>;
+
+    /// Deallocate a frame.
+    /// Takes &self, requires internal synchronization if state is modified.
+    fn dealloc(&self, ppn: PhysPageNum);
 }
 
-impl StackFrameAllocator {
-    pub fn new() -> Self {
-        Self {
-            current: 0,
-            end: 0,
-            recycled: Vec::new(),
-        }
-    }
+// --- Global Static Allocator Reference ---
+// Stores a reference to an object implementing the FrameAlloc trait.
+// The object itself must handle thread-safety for mutation.
+static FRAME_ALLOCATOR: OnceCell<&'static dyn FrameAlloc> = OnceCell::new();
 
-    fn init(&mut self, l: PhysPageNum, r: PhysPageNum) {
-        self.current = l.0;
-        self.end = r.0;
-    }
+/// Initialize the global frame allocator **once**.
+///
+/// # Panics
+/// Panics if called more than once.
+/// The provided `frame_allocator` must live for the 'static lifetime
+/// and must implement thread-safe interior mutability.
+pub fn init_frame_allocator(frame_allocator: &'static dyn FrameAlloc) {
+    FRAME_ALLOCATOR.init(frame_allocator);
 }
 
-impl FrameAlloc for StackFrameAllocator {
-    fn alloc(&mut self) -> Option<PhysPageNum> {
-        if let Some(ppn) = self.recycled.pop() {
-            Some(ppn.into())
-        } else if self.current == self.end {
-            None
-        } else {
-            self.current += 1;
-            Some((self.current - 1).into())
-        }
-    }
-
-    fn allocate_physical_pages(&mut self, pages: usize) -> Option<Vec<PhysPageNum>> {
-        if self.current + pages > self.end {
-            None
-        } else {
-            let start = self.current;
-            self.current += pages;
-
-            let mut result = Vec::with_capacity(pages);
-            for i in 0..pages {
-                result.push((start + i).into());
-            }
-
-            Some(result)
-        }
-    }
-
-    fn dealloc(&mut self, ppn: PhysPageNum) {
-        let ppn = ppn.0;
-        // validity check
-        if ppn >= self.current || self.recycled.iter().any(|&v| v == ppn) {
-            panic!("Frame ppn={:#x} has not been allocated!", ppn);
-        }
-        // recycle
-        self.recycled.push(ppn);
-    }
-}
-
-type FrameAllocatorImpl = StackFrameAllocator;
-
-pub static FRAME_ALLOCATOR: StaticCell<FrameAllocatorImpl> = StaticCell::new();
-
-/// Initialize the frame allocator
-pub fn init_frame_allocator() {
-    FRAME_ALLOCATOR.init(StackFrameAllocator::new());
-    // TODO: set the range of the frame allocator
-    let l = PhysPageNum::from(0x80000000);
-    let r = PhysPageNum::from(0x80000000 + 1024 * 1024 * 1024);
-    FRAME_ALLOCATOR.get_mut().init(l, r);
-}
-
-/// Allocate a frame
+/// Allocate a frame using the globally initialized allocator.
+///
+/// Returns a `FrameTracker` which automatically deallocates the frame when dropped.
+/// Returns `None` if no frames are available.
+/// # Panics
+/// Panics if the allocator is not initialized.
 pub fn frame_alloc() -> Option<FrameTracker> {
-    FRAME_ALLOCATOR.get_mut().alloc().map(FrameTracker::new)
+    FRAME_ALLOCATOR.get().alloc().map(FrameTracker::new)
 }
 
-/// Allocate multiple consecutive frames
+/// Allocate multiple consecutive physical frames using the global allocator.
+///
+/// Returns `None` if not enough consecutive frames are available.
+/// # Panics
+/// Panics if the allocator is not initialized.
 pub fn frame_alloc_physical_pages(num: usize) -> Option<Vec<FrameTracker>> {
+    if num == 0 {
+        return Some(Vec::new());
+    }
     FRAME_ALLOCATOR
-        .get_mut()
+        .get()
         .allocate_physical_pages(num)
-        .map(|x| x.iter().map(|&t| FrameTracker::new(t)).collect())
+        .map(|ppns| ppns.into_iter().map(FrameTracker::new).collect())
 }
 
-/// Deallocate a frame
+/// Deallocate a frame using the global allocator.
+///
+/// This is usually called automatically when a `FrameTracker` is dropped.
+/// # Panics
+/// Panics if the allocator is not initialized or if the ppn is invalid according
+/// to the allocator's internal state.
 pub fn frame_dealloc(ppn: PhysPageNum) {
-    FRAME_ALLOCATOR.get_mut().dealloc(ppn);
+    FRAME_ALLOCATOR.get().dealloc(ppn);
 }

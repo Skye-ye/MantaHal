@@ -7,8 +7,11 @@ authors = ["Sky Zheng <skyzheng@whu.edu.cn>"]
 [dependencies]
 bitflags = "2.9.0"
 spin = "0.10.0"
+mantahal-macro = "0.1.0"
 buddy_system_allocator = "0.11.0"
 log = "0.4"
+fdt = "0.1.5"
+once_cell = { version = "1.21", default-features = false, features = ["alloc"] }
 
 [features]
 default = ["irq", "debug", "log"]
@@ -22,3 +25,6 @@ sbi-rt = { version = "0.0.3", features = ["legacy"] }
 
 [target.'cfg(target_arch = "loongarch64")'.dependencies]
 loongArch64 = "0.2.5"
+
+[patch.crates-io.mantahal-macro]
+path = "mantahal-macro"

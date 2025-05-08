@@ -1,5 +1,5 @@
 use crate::common::addr::VirtAddr;
-pub struct TLB;
+pub struct Tlb;
 
 pub trait TLBOperation {
     /// flush the TLB entry by VirtualAddress

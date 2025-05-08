@@ -127,13 +127,12 @@ impl<T: PTOps> PageTable<T> {
         let mut current_ppn = self.root_ppn;
         let vpn_indices = vpn.indices(); // Assumes VirtPageNum::indices() exists
 
-        for level in 0..T::PAGE_TABLE_LEVELS {
-            let index = vpn_indices[level];
+        for (level, index) in vpn_indices.iter().enumerate().take(T::PAGE_TABLE_LEVELS) {
             // Bounds check index? get_pte_array should return fixed size slice.
             // Let hardware handle faults if index is out of range? Or check here?
             // For now, assume index is valid based on vpn.indices() logic.
             let ptes = T::get_pte_array(current_ppn);
-            let pte = &mut ptes[index];
+            let pte = &mut ptes[*index];
 
             if !T::pte_is_valid(pte) {
                 return None; // Entry not valid, path stops here
@@ -161,10 +160,9 @@ impl<T: PTOps> PageTable<T> {
         let mut current_ppn = self.root_ppn;
         let vpn_indices = vpn.indices();
 
-        for level in 0..T::PAGE_TABLE_LEVELS {
-            let index = vpn_indices[level];
+        for (level, index) in vpn_indices.iter().enumerate().take(T::PAGE_TABLE_LEVELS) {
             let ptes = T::get_pte_array(current_ppn);
-            let pte = &mut ptes[index];
+            let pte = &mut ptes[*index];
 
             if level == T::PAGE_TABLE_LEVELS - 1 {
                 // Reached the final level. Return this PTE slot (might be invalid).

@@ -1,10 +1,10 @@
 use crate::arch::config::mm::PAGE_SIZE_BITS;
 use crate::common::addr::VirtAddr;
-use crate::common::tlb::{TLB, TLBOperation};
+use crate::common::tlb::{TLBOperation, Tlb};
 use loongArch64::register::{stlbps, tlbidx, tlbrehi, tlbrentry};
 
 /// TLB operations
-impl TLBOperation for TLB {
+impl TLBOperation for Tlb {
     #[inline]
     fn flush_vaddr(vaddr: VirtAddr) {
         unsafe {
@@ -21,7 +21,7 @@ impl TLBOperation for TLB {
 }
 
 pub fn tlb_init() {
-    TLB::flush_all();
+    Tlb::flush_all();
     tlbidx::set_ps(PAGE_SIZE_BITS);
     stlbps::set_ps(PAGE_SIZE_BITS);
     tlbrehi::set_ps(PAGE_SIZE_BITS);

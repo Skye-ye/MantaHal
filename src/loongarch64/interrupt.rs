@@ -18,8 +18,8 @@ fn hardware_interrupts_bits() -> LineBasedInterrupt {
 pub fn interrupt_init(vs: usize, base_entry: usize) {
     ecfg::set_vs(vs);
     // enable all
-        set_local_interrupt(0x1ff);
-        eentry::set_eentry(base_entry);
+    set_local_interrupt(0x1ff);
+    eentry::set_eentry(base_entry);
 }
 
 // global interrupt status
@@ -27,19 +27,20 @@ pub fn is_interrupt_enabled() -> bool {
     crmd::read().ie()
 }
 
-// global interrupt status
-pub unsafe fn enable_interrupt() {
+/// global interrupt status
+pub fn enable_interrupt() {
     #[cfg(feature = "irq")]
     crmd::set_ie(true);
 }
 
-pub unsafe fn disable_interrupt() {
+/// disable global interrupt
+pub fn disable_interrupt() {
     #[cfg(feature = "irq")]
     crmd::set_ie(false);
 }
 
-// local interrupt
-// set interrupt status as bits input (the most flexible one)
+/// local interrupt
+/// set interrupt status as bits input (the most flexible one)
 pub fn set_local_interrupt(new_set: usize) {
     let interrupt_flags = match LineBasedInterrupt::from_bits(new_set) {
         Some(flags) => flags,
@@ -58,38 +59,38 @@ pub fn get_local_interrupt() -> usize {
     cur_lie.bits()
 }
 
-pub unsafe fn enable_timer_interrupt() {
+pub fn enable_timer_interrupt() {
     let cur_lie = ecfg::read().lie();
     let new_lie = cur_lie | LineBasedInterrupt::TIMER;
     ecfg::set_lie(new_lie);
 }
 
-pub unsafe fn disable_timer_interrupt() {
+pub fn disable_timer_interrupt() {
     let cur_lie = ecfg::read().lie();
     let new_lie = cur_lie & !LineBasedInterrupt::TIMER;
     ecfg::set_lie(new_lie);
 }
 
-pub unsafe fn enable_software_interrupt() {
+pub fn enable_software_interrupt() {
     let cur_lie = ecfg::read().lie();
     let new_lie = cur_lie | LineBasedInterrupt::SWI0 | LineBasedInterrupt::SWI1;
     ecfg::set_lie(new_lie);
 }
 
-pub unsafe fn disable_software_interrupt() {
+pub fn disable_software_interrupt() {
     let cur_lie = ecfg::read().lie();
     let new_lie = cur_lie & !(LineBasedInterrupt::SWI0 | LineBasedInterrupt::SWI1);
     ecfg::set_lie(new_lie);
 }
 
 // similar to riscv's eternal interrupt
-pub unsafe fn enable_hardware_interrupt() {
+pub fn enable_hardware_interrupt() {
     let cur_lie = ecfg::read().lie();
     let new_lie = cur_lie | hardware_interrupts_bits();
     ecfg::set_lie(new_lie);
 }
 
-pub unsafe fn disable_hardware_interrupt() {
+pub fn disable_hardware_interrupt() {
     let cur_lie = ecfg::read().lie();
     let new_lie = cur_lie & !hardware_interrupts_bits();
     ecfg::set_lie(new_lie);
