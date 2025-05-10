@@ -27,7 +27,7 @@ pub fn is_interrupt_enabled() -> bool {
     crmd::read().ie()
 }
 
-// global interrupt status
+// interrupt enable/disable
 pub unsafe fn enable_interrupt() {
     #[cfg(feature = "irq")]
     crmd::set_ie(true);

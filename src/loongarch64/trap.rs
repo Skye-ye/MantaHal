@@ -1,7 +1,7 @@
 use core::arch::{global_asm, naked_asm};
 use crate::arch::{interrupt, trapframe, time, handler};
 use crate::arch::config::{time::TIMER_IRQ, trapframe::{KERNEL_TRAPFRAME_SIZE, TRAPFRAME_SIZE}};
-use crate::arch::handler::HandleType;
+use crate::arch::handler::{TrapType, EscapeReason};
 use loongArch64::register::estat::{self, Exception, Trap};
 use loongArch64::register::badv;
 
@@ -52,12 +52,11 @@ pub extern "C" fn user_restore(context: *mut trapframe::TrapFrame) {
     }
 }
 
-/// 1、the first time transform to user mode
-/// 2、when user trap in kernel, it will trap into the context of this function
-pub fn run_user_task(context: &mut trapframe::TrapFrame) -> HandleType {
+/// interface for scheduler to run user task
+pub fn run_user_task(context: &mut trapframe::TrapFrame) -> EscapeReason {
     user_restore(context);
     // user trap arrive here
-    loongarch64_trap_handler(context)
+    loongarch64_trap_handler(context).into()
 }
 
 
@@ -82,7 +81,7 @@ pub unsafe extern "C" fn trap_vector_base() {
             bl      {trap_handler}
 
             LOAD_REGS
-            ertn
+            ertn        // go back to previous kernel states
             ",
             trapframe_size = const TRAPFRAME_SIZE,
             user_vec = sym user_vec,
@@ -92,12 +91,12 @@ pub unsafe extern "C" fn trap_vector_base() {
 }
 
 /// classify the trap type to handle type and pass it to specify handler
-fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
+fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> TrapType {
     let estat = estat::read();
     let trap= estat.cause();
     let mut token: usize = 0;
 
-    let handle_type = match trap {
+    let trap_type = match trap {
         // Interrupt
         Trap::Interrupt(_) => {
             let irq_num: usize = estat.is().trailing_zeros() as usize;
@@ -105,7 +104,7 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
                 // TIMER_IRQ
                 TIMER_IRQ => {
                     time::clear_timer();
-                    HandleType::Time
+                    TrapType::Time
                 }
                 // others
                 _ => {
@@ -125,7 +124,7 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
             Exception::PagePrivilegeIllegal
         )) => {
             token = page_fault as usize;
-            HandleType::PageFault
+            TrapType::PageFault
         }
 
         Trap::Exception(address_error @ (
@@ -135,14 +134,14 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
             Exception::BoundsCheckFault
         )) => {
             token = (address_error as usize) - 7;
-            HandleType::AddressError
+            TrapType::AddressError
         }
 
-        Trap::Exception(Exception::Syscall) => HandleType::SysCall,
+        Trap::Exception(Exception::Syscall) => TrapType::SysCall,
 
         Trap::Exception(Exception::Breakpoint) => {
             tf.era += 4;
-            HandleType::DeBug
+            TrapType::DeBug
         }
 
         Trap::Exception(instr_error @ (
@@ -151,7 +150,7 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
             Exception::FloatingPointUnavailable
         )) => {
             token = (instr_error as usize) - 13;
-            HandleType::InstrError
+            TrapType::InstrError
         }
 
         Trap::MachineError(_) => todo!(),
@@ -167,8 +166,8 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
         }
     };
 
-    handler::specify_handler(tf, handle_type, token);
-    handle_type
+    handler::specify_handler(tf, trap_type, token);
+    trap_type
 }
 
 global_asm!{
