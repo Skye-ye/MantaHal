@@ -1,9 +1,9 @@
-use crate::arch::config::{
+use crate::loongarch64::config::{
     time::TIMER_IRQ,
     trapframe::{KERNEL_TRAPFRAME_SIZE, USER_TRAPFRAME_SIZE},
 };
-use crate::arch::handler::HandleType;
-use crate::arch::{handler, interrupt, time, trapframe};
+use crate::loongarch64::handler::HandleType;
+use crate::loongarch64::{handler, interrupt, time, trapframe};
 use core::arch::naked_asm;
 use loongArch64::register::badv;
 use loongArch64::register::estat::{self, Exception, Trap};

@@ -14,10 +14,11 @@ fdt = "0.1.5"
 once_cell = { version = "1.21", default-features = false, features = ["alloc"] }
 
 [features]
-default = ["irq", "debug", "log"]
+default = ["irq", "debug", "log", "fp"]
 irq = []
 debug = []
 log = []
+fp = []
 
 [target.'cfg(target_arch = "riscv64")'.dependencies]
 riscv = "0.13.0"

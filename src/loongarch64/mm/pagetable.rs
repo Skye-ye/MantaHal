@@ -1,11 +1,11 @@
-use crate::arch::config::mm::{
-    PAGE_SIZE, PAGE_SIZE_BITS, PAGE_TABLE_LEVELS, PPN_MASK, PPN_OFFSET_IN_PTE,
-};
 use crate::bit;
 use crate::common::addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum};
 use crate::common::pagetable::PTEFlags;
 use crate::common::pagetable::PTOps;
 use crate::common::pagetable::PageTableEntry;
+use crate::loongarch64::config::mm::{
+    PAGE_SIZE, PAGE_SIZE_BITS, PAGE_TABLE_LEVELS, PPN_MASK, PPN_OFFSET_IN_PTE,
+};
 
 bitflags::bitflags! {
     /// Possible flags for a page table entry.
