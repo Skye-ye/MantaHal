@@ -7,7 +7,6 @@ pub mod exc_syscall;
 pub mod exc_tlb;
 pub mod irq_time;
 
-use crate::loongarch64::interrupt::IRQVector;
 use crate::loongarch64::trapframe::TrapFrame;
 
 /// transfrom trap type to handler-suitable type

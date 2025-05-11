@@ -3,7 +3,7 @@ use crate::loongarch64::config::{
     trapframe::{KERNEL_TRAPFRAME_SIZE, USER_TRAPFRAME_SIZE},
 };
 use crate::loongarch64::handler::HandleType;
-use crate::loongarch64::{handler, interrupt, time, trapframe};
+use crate::loongarch64::{handler, irq, time, trapframe};
 use core::arch::naked_asm;
 use loongArch64::register::badv;
 use loongArch64::register::estat::{self, Exception, Trap};
@@ -136,7 +136,7 @@ macro_rules! include_asm_macros {
 
 /// set fundamental trap settings
 pub fn set_trap_vector_base() {
-    interrupt::interrupt_init(0, trap_vector_base as usize);
+    irq::IRQ::interrupt_init(0, trap_vector_base as usize);
 }
 
 /// Usertrap
