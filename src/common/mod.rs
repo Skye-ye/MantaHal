@@ -8,6 +8,7 @@ pub mod device;
 pub mod frame_allocator;
 pub mod pagetable;
 pub mod tlb;
+pub mod tls;
 
 static CPU_ID: usize = 0;
 
