@@ -4,7 +4,7 @@ pub mod config;
 pub mod console;
 pub mod context;
 pub mod handler;
-pub mod interrupt;
+pub mod irq;
 pub mod macros;
 pub mod mm;
 pub mod time;
