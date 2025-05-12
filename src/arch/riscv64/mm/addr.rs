@@ -86,45 +86,15 @@ impl PhysPageNum {
         (*self).into()
     }
 
+    pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
 
-    // Get `PageTableEntry` array.
-    // pub fn pte_array(&self) -> &'static mut [PageTableEntry] {
-    //     let vaddr: VirtAddr = self.to_paddr().to_vaddr();
-    //     unsafe {
-    //         core::slice::from_raw_parts_mut(vaddr.bits() as *mut PageTableEntry, PTES_PER_PAGE)
-    //     }
-    // }
+        let vaddr: VirtAddr = self.to_paddr().to_vaddr();
+        unsafe {
+            core::slice::from_raw_parts_mut(vaddr.bits() as *mut PageTableEntry, PTES_PER_PAGE)
+        }
+      
+    }
 
-    // /// Get bytes array of a physical page
-    // pub fn bytes_array(&self) -> &'static mut [u8] {
-    //     let vaddr: VirtAddr = self.to_paddr().to_vaddr();
-    //     unsafe { core::slice::from_raw_parts_mut(vaddr.bits() as *mut u8, PAGE_SIZE) }
-    // }
-
-    // /// Get bytes array of a physical page with a range.
-    // pub fn bytes_array_range(&self, range: Range<usize>) -> &'static mut [u8] {
-    //     debug_assert!(range.end <= PAGE_SIZE, "range: {range:?}");
-    //     let mut vaddr: VirtAddr = self.to_paddr().to_vaddr();
-    //     vaddr += range.start;
-    //     unsafe { core::slice::from_raw_parts_mut(vaddr.bits() as *mut u8, range.len()) }
-    // }
-
-    // Empty the whole page.
-    // pub fn clear_page(&self) {
-    //     self.usize_array().fill(0)
-    // }
-
-    // pub fn copy_page_from_another(&self, another_ppn: PhysPageNum) {
-    //     let dst = self.usize_array();
-    //     let src = another_ppn.usize_array();
-    //     dst.copy_from_slice(src);
-    // }
-
-    // fn usize_array(&self) -> &'static mut [usize] {
-    //     const USIZES_PER_PAGE: usize = PAGE_SIZE / size_of::<usize>();
-    //     let vaddr: VirtAddr = self.to_paddr().to_vaddr();
-    //     unsafe { core::slice::from_raw_parts_mut(vaddr.bits() as *mut usize, USIZES_PER_PAGE) }
-// }
 }
 
 

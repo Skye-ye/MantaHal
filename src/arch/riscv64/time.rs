@@ -1,7 +1,7 @@
-use core::time::Duration;
-use riscv::register::{sie,time};
-use crate::arch::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
 
+use crate::arch::config::{board::CLOCK_FREQ, time::INTERRUPTS_PER_SECOND};
+use core::time::Duration;
+use riscv::register::{sie, time};
 
 pub fn get_time() -> usize {
     time::read()
@@ -40,24 +40,27 @@ pub fn set_next_timeout() {
     sbi_rt::set_timer((time::read() + CLOCK_FREQ / 100) as _);
 }
 
-// Initialize the Timer 
+// Initialize the Timer
 pub fn init() {
-    unsafe {
-        sie::set_stimer();
-    }
+    enable_timer();
     set_next_timeout();
     log::info!("initialize timer interrupt");
 }
 
 // enable decrement
-pub unsafe fn enable_timer() {
-    unimplemented!();
+pub fn enable_timer() {
+    unsafe {
+        sie::set_stimer();
+    }
 }
 
-pub unsafe fn disable_timer() {
-    unimplemented!();
+pub fn disable_timer() {
+    unsafe {
+    sie::clear_stimer();
+    }
 }
+
 
 pub fn clear_timer() {
-    unimplemented!();
+    set_next_timeout();
 }

@@ -96,6 +96,7 @@ impl KContext {
 /// Save the context of current task and switch to new task.
 #[naked]
 pub unsafe extern "C" fn context_switch(from: *mut KContext, to: *const KContext) {
+    unsafe {
     core::arch::naked_asm!(
         // Save Kernel Context.
         save_callee_regs!(),
@@ -103,19 +104,20 @@ pub unsafe extern "C" fn context_switch(from: *mut KContext, to: *const KContext
         restore_callee_regs!(),
         // Return to the caller.
         ret!(),
-    )
+    );
+}
 }
 
 /// Context Switch With Page Table
 ///
 /// Save the context of current task and switch to new task.
 #[inline]
-pub unsafe extern "C" fn context_switch_pt<T>(
+pub unsafe  extern "C" fn context_switch_pt<T>(
     from: *mut KContext,
     to: *const KContext,
-    pt_token: PageTable<T>,
+    pt_token: usize,
 ) {
-    context_switch_pt_impl(from, to, pt_token.0.0);
+    context_switch_pt_impl(from, to, pt_token);
 }
 
 /// Context Switch With Page Table Implement
@@ -127,6 +129,7 @@ unsafe extern "C" fn context_switch_pt_impl(
     to: *const KContext,
     pt_token: usize,
 ) {
+    unsafe {
     core::arch::naked_asm!(
         // Save Kernel Context.
         save_callee_regs!(),
@@ -142,7 +145,8 @@ unsafe extern "C" fn context_switch_pt_impl(
         restore_callee_regs!(),
         // Return to the caller.
         ret!(),
-    )
+    );
+}
 }
 
 #[naked]
@@ -156,5 +160,6 @@ pub extern "C" fn read_current_tp() -> usize {
         )
     }
 }
+
 
 //kcontext
