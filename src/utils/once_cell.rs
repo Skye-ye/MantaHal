@@ -92,6 +92,12 @@ impl<T: fmt::Debug> fmt::Debug for OnceCell<T> {
     }
 }
 
+impl<T> Default for OnceCell<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> Deref for OnceCell<T> {
     type Target = T;
 

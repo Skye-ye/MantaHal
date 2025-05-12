@@ -7,6 +7,7 @@ authors = ["Sky Zheng <skyzheng@whu.edu.cn>"]
 [dependencies]
 bitflags = "2.9.0"
 spin = "0.10.0"
+cfg-if = "1.0"
 mantahal-macro = "0.1.0"
 buddy_system_allocator = "0.11.0"
 log = "0.4"
