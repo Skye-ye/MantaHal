@@ -1,4 +1,4 @@
-use crate::{arch::config::mm::{PAGE_MASK, PAGE_SIZE, PAGE_SIZE_BITS, PAGE_TABLE_LEVEL_NUM, PPN_WIDTH_SV39, PTES_PER_PAGE, PTE_SIZE, VA_WIDTH_SV39, VIRT_RAM_OFFSET, VPN_WIDTH_SV39}, common::{addr::{PhysAddr, PhysPageNum, VirtAddr}, pagetable::PageTableEntry}};
+use crate::{arch::config::mm::{PAGE_MASK, PAGE_SIZE, PAGE_SIZE_BITS, PAGE_TABLE_LEVELS, PPN_WIDTH_SV39, PTES_PER_PAGE, PTE_SIZE, VA_WIDTH_SV39, VIRT_RAM_OFFSET, VPN_WIDTH_SV39}, common::{addr::{PhysAddr, PhysPageNum, VirtAddr}, pagetable::PageTableEntry}};
 use crate::common::addr::VirtPageNum;
 
 // PhysAddr implementations
@@ -203,17 +203,5 @@ impl From<VirtAddr> for VirtPageNum {
 impl From<VirtPageNum> for VirtAddr {
     fn from(v: VirtPageNum) -> Self {
         Self(v.0 << PAGE_SIZE_BITS)
-    }
-}
-
-impl VirtPageNum{
-    pub fn indices(&self) -> [usize; PAGE_TABLE_LEVEL_NUM] {
-        let mut vpn = self.0;
-        let mut indices = [0usize; PAGE_TABLE_LEVEL_NUM];
-        for i in (0..PAGE_TABLE_LEVEL_NUM).rev() {
-            indices[i] = vpn & (PTES_PER_PAGE - 1);
-            vpn >>= 9;
-        }
-        indices
     }
 }

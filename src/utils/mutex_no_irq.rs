@@ -19,7 +19,7 @@ struct IrqStatus {
 impl Drop for IrqStatus {
     fn drop(&mut self) {
         if self.irq_enabled {
-            Irq::enable_interrupt();
+            unsafe { IRQ::enable_interrupt() }
         }
     }
 }
@@ -60,8 +60,9 @@ impl<T: ?Sized> MutexNoIrq<T> {
         let original_irq_status = IrqStatus {
             irq_enabled: Irq::interrupt_enabled(),
         };
-
-        Irq::disable_interrupt();
+        unsafe {
+            IRQ::disable_interrupt();
+        }
 
         // If lock is not acquired. IRQs were disabled by us.
         // original_irq_status was not moved and will be dropped now,
@@ -80,8 +81,9 @@ impl<T: ?Sized> MutexNoIrq<T> {
         let original_irq_status_keeper = IrqStatus {
             irq_enabled: Irq::interrupt_enabled(),
         };
-
-        Irq::disable_interrupt();
+        unsafe {
+            IRQ::disable_interrupt();
+        }
 
         // Spin until the underlying lock is acquired.
         let acquired_guard = loop {

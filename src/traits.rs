@@ -1,6 +1,6 @@
 use core::time::Duration;
 
-use crate::arch::{handler::TrapType, kcontext::KContext, trapframe};
+use crate::arch::{context::Context, handler::TrapType, trapframe};
 
 use super::addr::VirtAddr;
 
@@ -33,8 +33,8 @@ pub trait Timer {
 //3.调度接口（任务上下文切换）
 pub trait TaskSwitch {
     //使用无栈协程进行调度似乎并没有用到
-    fn context_switch(from: *mut KContext, to: *const KContext);
-    fn context_switch_pt(from: *mut KContext, to: *const KContext, pt_token: usize);
+    fn context_switch(from: *mut Context, to: *const Context);
+    fn context_switch_pt(from: *mut Context, to: *const Context, pt_token: usize);
 }
 
 // 4.trap处理接口

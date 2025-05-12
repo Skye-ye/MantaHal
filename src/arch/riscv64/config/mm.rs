@@ -14,6 +14,6 @@ pub const VPN_WIDTH_SV39: usize = VA_WIDTH_SV39 - PAGE_SIZE_BITS;
 pub const PPN_OFFSET_IN_PTE: usize = 10;
 
 pub const PPN_MASK :usize= (1usize<<PPN_WIDTH_SV39)-1;
-pub const PAGE_TABLE_LEVEL_NUM: usize = 3;
+pub const PAGE_TABLE_LEVELS: usize = 3;
 pub const PTE_INDEX_BITS: usize = 10;
 pub const PTE_INDEX_MASK: usize = (1 << PTE_INDEX_BITS) - 1;

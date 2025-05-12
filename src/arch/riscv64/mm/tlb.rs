@@ -1,6 +1,6 @@
-use crate::common::{addr::VirtAddr, tlb::{TLBOperation, TLB}};
+use crate::common::{addr::VirtAddr, tlb::{TLBOperation, Tlb}};
 
-impl TLBOperation for TLB {
+impl TLBOperation for Tlb {
 
     fn flush_vaddr(vaddr: VirtAddr) {
         unsafe {

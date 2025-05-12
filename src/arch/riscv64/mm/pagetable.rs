@@ -1,14 +1,15 @@
-use alloc::vec::Vec;
-use riscv::register::satp::{self, Satp};
+use crate::arch::config::mm::PAGE_SIZE_BITS;
 use crate::common::frame_allocator::{FrameTracker, frame_alloc};
 use crate::{
-    arch::config::mm::{PAGE_SIZE, PPN_MASK, PPN_OFFSET_IN_PTE,PAGE_TABLE_LEVEL_NUM},
+    arch::config::mm::{PAGE_SIZE, PAGE_TABLE_LEVELS, PPN_MASK, PPN_OFFSET_IN_PTE},
     bit,
     common::{
         addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum},
         pagetable::{PTEFlags, PTOps, PageTableEntry},
     },
 };
+use alloc::vec::Vec;
+use riscv::register::satp::{self, Satp};
 
 bitflags::bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -105,27 +106,20 @@ impl From<PTEFlags> for Riscv64PTEFlags {
 pub struct Riscv64PTImpl;
 
 impl PTOps for Riscv64PTEFlags {
-    fn new(ppn: PhysPageNum, flags: PTEFlags) -> PageTableEntry {
-        let arch_flags: Riscv64PTEFlags = flags.into();
-        PageTableEntry {
-            bits: ppn.0 << PPN_OFFSET_IN_PTE | arch_flags.bits(),
-        }
+    type ArchFlags = Riscv64PTEFlags;
+
+    const PAGE_SIZE: usize = PAGE_SIZE;
+    const PAGE_SIZE_BITS: usize = PAGE_SIZE_BITS;
+    const PAGE_TABLE_LEVELS: usize = PAGE_TABLE_LEVELS;
+    fn get_pte_array(ppn: PhysPageNum) -> &'static mut [PageTableEntry] {
+        const PTES_PER_PAGE: usize = PAGE_SIZE / core::mem::size_of::<PageTableEntry>();
+        let va = Self::ppn_to_pa(ppn).to_vaddr().0;
+        unsafe { core::slice::from_raw_parts_mut(va as *mut PageTableEntry, PTES_PER_PAGE) }
     }
 
-    fn ppn(pte: &PageTableEntry) -> PhysPageNum {
-        ((pte.bits >> PPN_OFFSET_IN_PTE) & PPN_MASK).into()
-    }
-
-    fn flags(pte: &PageTableEntry) -> PTEFlags {
-        Riscv64PTEFlags::from_bits(pte.bits as usize)
-            .unwrap()
-            .into()
-    }
-
-    fn floor(va: VirtAddr) -> VirtPageNum {
+    fn va_to_vpn(va: VirtAddr) -> VirtPageNum {
         va.floor()
     }
-
     fn ppn_to_pa(ppn: PhysPageNum) -> PhysAddr {
         ppn.into()
     }
@@ -143,48 +137,22 @@ impl PTOps for Riscv64PTEFlags {
         ppn_usize << 12
     }
 
-    fn get_bytes_array(ppn: PhysPageNum) -> &'static mut [u8] {
-        let vaddr: VirtAddr = ppn.to_paddr().to_vaddr();
-        unsafe { core::slice::from_raw_parts_mut(vaddr.bits() as *mut u8, PAGE_SIZE) }
+    fn pte_is_valid(pte: &PageTableEntry) -> bool {
+        Self::pte_to_arch_flags(pte).contains(Riscv64PTEFlags::V)
+    }
+    fn pte_to_ppn(pte: &PageTableEntry) -> PhysPageNum {
+        ((pte.bits >> PPN_OFFSET_IN_PTE) & PPN_MASK).into()
     }
 
-    fn find_pte<'a>(root_ppn: PhysPageNum, vpn: VirtPageNum) -> Option<&'a mut PageTableEntry> {
-        let mut ppn = root_ppn;
-        let idxs = vpn.indices();
-        for (i, idx) in idxs.into_iter().enumerate() {
-            let pte = &mut ppn.get_pte_array()[idx];
-            if !Self::valid(pte) {
-                return None;
-            }
-            if i == PAGE_TABLE_LEVEL_NUM - 1 {
-                return Some(pte);
-            }
-            ppn = Self::ppn(pte);
-        }
-        return None;
+    fn pte_to_arch_flags(pte: &PageTableEntry) -> Self::ArchFlags {
+        todo!();
     }
-    fn find_pte_create<'a>(
-        root_ppn: PhysPageNum,
-        frames: &'a mut Vec<FrameTracker>,
-        vpn: VirtPageNum,
-    ) -> Option<&'a mut PageTableEntry> {
-        let idxs = vpn.indices();
-        let mut ppn = root_ppn;
-        let mut res: Option<&'a mut PageTableEntry> = None;
-        for (i, idx) in idxs.iter().enumerate() {
-            let pte = &mut ppn.get_pte_array()[*idx];
-            if i == PAGE_TABLE_LEVEL_NUM - 1 {
-                res = Some(pte);
-                break;
-            }
-            if !Self::valid(pte) {
-                let frame = frame_alloc().unwrap();
-                *pte = Self::new(frame.ppn, PTEFlags::V);
-                frames.push(frame);
-            }
-            ppn = Self::ppn(pte);
-        }
-        res
+
+    fn pte_new_leaf(ppn: PhysPageNum, flags: PTEFlags) -> PageTableEntry {
+       todo!();
+    }
+    fn pte_new_intermediate(ppn: PhysPageNum) -> PageTableEntry {
+        todo!();
     }
 
     fn switch_page_table(page_table_token: usize) {

@@ -1,5 +1,5 @@
 
-use crate::arch::interrupt::IRQVector;
+use crate::arch::irq::IRQVector;
 use crate::arch::trapframe::TrapFrame;
 
 #[derive(Debug, Clone, Copy)]
