@@ -2,7 +2,7 @@ use core::hint::spin_loop;
 use core::ops::{Deref, DerefMut};
 use spin::{Mutex, MutexGuard};
 
-use crate::arch::irq::IRQ;
+use crate::arch::irq::Irq;
 
 pub struct MutexNoIrq<T: ?Sized> {
     lock: Mutex<T>,
@@ -19,7 +19,7 @@ struct IrqStatus {
 impl Drop for IrqStatus {
     fn drop(&mut self) {
         if self.irq_enabled {
-            IRQ::enable_interrupt();
+            Irq::enable_interrupt();
         }
     }
 }
@@ -58,21 +58,18 @@ impl<T: ?Sized> MutexNoIrq<T> {
     #[inline]
     pub fn try_lock(&self) -> Option<MutexNoIrqGuard<T>> {
         let original_irq_status = IrqStatus {
-            irq_enabled: IRQ::interrupt_enabled(),
+            irq_enabled: Irq::interrupt_enabled(),
         };
 
-        IRQ::disable_interrupt();
+        Irq::disable_interrupt();
 
-        match self.lock.try_lock() {
-            Some(guard) => Some(MutexNoIrqGuard {
-                guard,
-                _irq_status: original_irq_status,
-            }),
-            // Lock not acquired. IRQs were disabled by us.
-            // original_irq_status was not moved and will be dropped now,
-            // automatically restoring the original IRQ state.
-            None => None,
-        }
+        // If lock is not acquired. IRQs were disabled by us.
+        // original_irq_status was not moved and will be dropped now,
+        // automatically restoring the original IRQ state.
+        self.lock.try_lock().map(|guard| MutexNoIrqGuard {
+            guard,
+            _irq_status: original_irq_status,
+        })
     }
 
     /// Acquires the lock, spinning if necessary.
@@ -81,10 +78,10 @@ impl<T: ?Sized> MutexNoIrq<T> {
     #[inline]
     pub fn lock(&self) -> MutexNoIrqGuard<T> {
         let original_irq_status_keeper = IrqStatus {
-            irq_enabled: IRQ::interrupt_enabled(),
+            irq_enabled: Irq::interrupt_enabled(),
         };
 
-        IRQ::disable_interrupt();
+        Irq::disable_interrupt();
 
         // Spin until the underlying lock is acquired.
         let acquired_guard = loop {
@@ -124,7 +121,7 @@ pub struct MutexNoIrqGuard<'a, T: ?Sized + 'a> {
     _irq_status: IrqStatus,
 }
 
-impl<'a, T: ?Sized> Deref for MutexNoIrqGuard<'a, T> {
+impl<T: ?Sized> Deref for MutexNoIrqGuard<'_, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -132,7 +129,7 @@ impl<'a, T: ?Sized> Deref for MutexNoIrqGuard<'a, T> {
     }
 }
 
-impl<'a, T: ?Sized> DerefMut for MutexNoIrqGuard<'a, T> {
+impl<T: ?Sized> DerefMut for MutexNoIrqGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T {
         &mut (self.guard)
     }
