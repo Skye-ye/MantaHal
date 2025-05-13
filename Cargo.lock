@@ -13,7 +13,7 @@ dependencies = [
  "log",
  "loongArch64",
  "mantahal-macro",
- "once_cell",
+ "memory_addr",
  "riscv",
  "sbi-rt",
  "spin 0.10.0",
@@ -106,10 +106,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "once_cell"
-version = "1.21.3"
+name = "memory_addr"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+checksum = "5438b8df0f13e16e1f46140de247695a95952a5a4479e47197a8711bf1063373"
 
 [[package]]
 name = "paste"
