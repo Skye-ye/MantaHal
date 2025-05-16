@@ -76,6 +76,7 @@ pub trait PTOps {
     fn pte_new_leaf(ppn: PhysPageNum, flags: PTEFlags) -> PageTableEntry;
     /// Create a new PTE for an intermediate node (points to next level table ppn).
     fn pte_new_intermediate(ppn: PhysPageNum) -> PageTableEntry;
+    fn switch_page_table(page_table_token: usize);
 }
 
 /// A page table managing virtual to physical address translation using a specific PTOps implementation.

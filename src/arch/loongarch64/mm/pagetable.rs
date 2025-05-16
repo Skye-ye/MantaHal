@@ -213,4 +213,8 @@ impl PTOps for Loongarch64PTImpl {
             bits: (ppn.0 << PPN_OFFSET_IN_PTE) | arch_flags.bits(),
         }
     }
+    //TODO: switch pagetable for loongarch64
+    fn switch_page_table(page_table_token: usize) {
+        todo!();
+    }
 }

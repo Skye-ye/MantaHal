@@ -76,6 +76,10 @@ impl<T> OnceCell<T> {
             None
         }
     }
+
+    pub unsafe fn get_unchecked(&self) -> &T {
+        &*(*self.value.get()).as_ptr()
+    }
 }
 
 impl<T: fmt::Debug> fmt::Debug for OnceCell<T> {
