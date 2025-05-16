@@ -1,9 +1,9 @@
 use crate::arch::config::mm::PAGE_SIZE_BITS;
-use crate::common::frame_allocator::{FrameTracker, frame_alloc};
+use crate::frame_allocator::{FrameTracker, frame_alloc};
 use crate::{
     arch::config::mm::{PAGE_SIZE, PAGE_TABLE_LEVELS, PPN_MASK, PPN_OFFSET_IN_PTE},
     bit,
-    common::{
+    {
         addr::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum},
         pagetable::{PTEFlags, PTOps, PageTableEntry},
     },
@@ -145,14 +145,24 @@ impl PTOps for Riscv64PTEFlags {
     }
 
     fn pte_to_arch_flags(pte: &PageTableEntry) -> Self::ArchFlags {
-        todo!();
+        Riscv64PTEFlags::from_bits(pte.bits & ((1 << PPN_OFFSET_IN_PTE) - 1)).unwrap()
     }
 
     fn pte_new_leaf(ppn: PhysPageNum, flags: PTEFlags) -> PageTableEntry {
-       todo!();
+        let arch_flags: Riscv64PTEFlags = flags.into();
+        // Combine PPN shifted with arch flags
+        PageTableEntry {
+            bits: (ppn.0 << PPN_OFFSET_IN_PTE) | arch_flags.bits(),
+        }
     }
     fn pte_new_intermediate(ppn: PhysPageNum) -> PageTableEntry {
-        todo!();
+        // 中间页表项标志位：V=1（有效），其他权限位保持 0
+        let flags = Riscv64PTEFlags::V;
+
+        PageTableEntry {
+            // PPN 左移 10 位后与标志位组合
+            bits: (ppn.0 <<PPN_OFFSET_IN_PTE) | flags.bits(),
+        }
     }
 
     fn switch_page_table(page_table_token: usize) {

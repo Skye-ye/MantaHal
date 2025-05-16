@@ -3,7 +3,7 @@ use core::{
     ops::{Index, IndexMut},
 };
 
-use crate::common::pagetable::PageTable;
+use crate::pagetable::PageTable;
 
 // use crate::PageTable;
 

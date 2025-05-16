@@ -5,15 +5,16 @@ pub const PAGE_SIZE: usize = 1 << PAGE_SIZE_BITS;
 pub const PAGE_MASK: usize = PAGE_SIZE - 1;
 pub const PTE_SIZE: usize = 8;
 pub const VIRT_RAM_OFFSET :usize=0xffffffc000000000;
-pub const HART_START_ADDR:usize=0xffffffc100200000;
+pub const HART_START_ADDR:usize= 0xffffffc100200000;
 
 pub const PA_WIDTH_SV39: usize = 56;
 pub const VA_WIDTH_SV39: usize = 39;
 pub const PPN_WIDTH_SV39: usize = PA_WIDTH_SV39 - PAGE_SIZE_BITS;
 pub const VPN_WIDTH_SV39: usize = VA_WIDTH_SV39 - PAGE_SIZE_BITS;
 pub const PPN_OFFSET_IN_PTE: usize = 10;
-
+pub const PTE_SIZE_BITS:usize=3;
 pub const PPN_MASK :usize= (1usize<<PPN_WIDTH_SV39)-1;
 pub const PAGE_TABLE_LEVELS: usize = 3;
-pub const PTE_INDEX_BITS: usize = 10;
+pub const PTE_INDEX_BITS: usize = PAGE_SIZE_BITS - PTE_SIZE_BITS;
 pub const PTE_INDEX_MASK: usize = (1 << PTE_INDEX_BITS) - 1;
+pub const VIRT_ADDR_START: usize = 0xffff_ffc0_0000_0000;

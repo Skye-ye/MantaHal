@@ -19,7 +19,7 @@
 # __trap_from_user: This label marks the entry point for traps originating from user mode
 __trap_from_user:
     # Swap the user stack pointer (sscratch) with the kernel stack pointer (sp)
-    csrrw sp, sscratch, sp
+    # csrrw sp, sscratch, sp
     # Now, sp points to *TrapContext in kernel space, sscratch holds the user stack pointer
     
     # Save other general-purpose registers
@@ -42,6 +42,8 @@ __trap_from_user:
     # Read user stack pointer from sscratch and save it into the TrapContext
     csrr t2, sscratch   # Read the user stack pointer into t2
     sd t2, 2*8(sp)      # Save user stack pointer into the TrapContext
+    csrw    sscratch, x0
+
 
     # Move to kernel stack pointer (kernel_sp)
     # Load the kernel return address
@@ -117,6 +119,9 @@ __return_to_user:
 __trap_from_kernel:
     # only need to save caller-saved regs
     # note that we don't save sepc & stvec here
+    csrrw   sp, sscratch, sp
+    bnez    sp, __trap_from_user
+    csrr    sp, sscratch
     addi sp, sp, -17*8
     sd  ra,  1*8(sp)
     sd  t0,  2*8(sp)
@@ -134,6 +139,7 @@ __trap_from_kernel:
     sd  a5, 14*8(sp)
     sd  a6, 15*8(sp)
     sd  a7, 16*8(sp)
+    csrw    sscratch, x0
     call kernel_trap_handler
     ld  ra,  1*8(sp)
     ld  t0,  2*8(sp)

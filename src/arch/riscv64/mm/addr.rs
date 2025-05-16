@@ -1,5 +1,5 @@
-use crate::{arch::config::mm::{PAGE_MASK, PAGE_SIZE, PAGE_SIZE_BITS, PAGE_TABLE_LEVELS, PPN_WIDTH_SV39, PTES_PER_PAGE, PTE_SIZE, VA_WIDTH_SV39, VIRT_RAM_OFFSET, VPN_WIDTH_SV39}, common::{addr::{PhysAddr, PhysPageNum, VirtAddr}, pagetable::PageTableEntry}};
-use crate::common::addr::VirtPageNum;
+use crate::{arch::config::mm::{PAGE_MASK, PAGE_SIZE, PAGE_SIZE_BITS, PAGE_TABLE_LEVELS, PPN_WIDTH_SV39, PTES_PER_PAGE, PTE_SIZE, VA_WIDTH_SV39, VIRT_RAM_OFFSET, VPN_WIDTH_SV39}, {addr::{PhysAddr, PhysPageNum, VirtAddr}, pagetable::PageTableEntry}};
+use crate::addr::VirtPageNum;
 
 // PhysAddr implementations
 impl PhysAddr {

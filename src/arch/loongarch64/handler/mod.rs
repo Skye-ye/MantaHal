@@ -11,7 +11,7 @@ pub use super::trapframe::TrapFrame;
 
 /// transfrom trap type to handler-suitable type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TrapType {
+pub enum HandleType {
     NoReason = 0,
     Irq = 1,
     Time = 2,
@@ -41,7 +41,7 @@ static HANDLERS: [HandlerFn; 9] = [
 /// tf: context
 /// handle_type: which handler to call
 /// token: specific token for the handler
-pub fn specify_handler(tf: &mut TrapFrame, handle_type: TrapType, token: usize) {
+pub fn specify_handler(tf: &mut TrapFrame, handle_type: HandleType, token: usize) {
     let handler = HANDLERS[handle_type as usize];
     handler(tf, token);
 }

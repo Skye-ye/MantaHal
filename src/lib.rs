@@ -3,7 +3,9 @@
 #![feature(naked_functions)]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 #![feature(stmt_expr_attributes)]
-#![feature(riscv_ext_intrinsics)]
+#![cfg_attr(target_arch = "riscv64", feature(riscv_ext_intrinsics))]
+#![feature(used_with_arg)]
+
 extern crate alloc;
 
 mod addr;
@@ -18,14 +20,22 @@ mod utils;
 
 use crate::utils::OnceCell;
 use alloc::vec::Vec;
+use fdt::Fdt;
 
-static CPU_ID: usize = 0;
+
+//TODO：解决此处报错
+#[unsafe(mantahal_macro::def_percpu)] 
+pub(crate) static CPU_ID: usize = 0;
+
 
 pub static CPU_COUNT: OnceCell<usize> = OnceCell::new();
 
 pub static MEMORY_AREAS: OnceCell<Vec<(usize, usize)>> = OnceCell::new();
 
 pub static DEVICE_TREE_BLOB: OnceCell<Vec<u8>> = OnceCell::new();
+
+#[allow(dead_code)]
+pub(crate) static DTB_PTR: OnceCell<usize> = OnceCell::new();
 
 /// Returns a reference to the vector describing physical memory regions.
 ///
@@ -63,4 +73,11 @@ pub fn device_tree_blob() -> &'static Vec<u8> {
 #[inline]
 pub fn cpu_count() -> usize {
     *CPU_COUNT
+}
+
+
+/// Get the fdt
+pub fn get_fdt() -> Option<Fdt<'static>> {
+    // Fdt::new(&DTB_BIN).ok()
+    unsafe { Fdt::from_ptr(*DTB_PTR.get_unchecked() as *const u8).ok() }
 }

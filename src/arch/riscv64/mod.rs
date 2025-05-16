@@ -9,3 +9,4 @@ pub mod time;
 pub mod trapframe;
 pub mod trap;
 pub mod handler;
+pub mod arch;

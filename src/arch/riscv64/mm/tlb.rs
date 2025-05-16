@@ -1,4 +1,4 @@
-use crate::common::{addr::VirtAddr, tlb::{TLBOperation, Tlb}};
+use crate::{addr::VirtAddr, tlb::{TLBOperation, Tlb}};
 
 impl TLBOperation for Tlb {
 
@@ -16,6 +16,4 @@ impl TLBOperation for Tlb {
     }
 }
 
-pub fn tlb_init() {
-   todo!();
-}
+
