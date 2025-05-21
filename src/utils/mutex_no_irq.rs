@@ -9,17 +9,17 @@ pub struct MutexNoIrq<T: ?Sized> {
 }
 
 /// Irq Status Struct.
-/// This structure contains the status of the current IRQ
+/// This structure contains the status of the current Irq
 /// And it will restore irq status after dropping.
 struct IrqStatus {
     irq_enabled: bool,
 }
 
-/// Restore the IRQ status when dropping
+/// Restore the Irq status when dropping
 impl Drop for IrqStatus {
     fn drop(&mut self) {
         if self.irq_enabled {
-            Irq::enable_interrupt();
+            unsafe { Irq::enable_interrupt() }
         }
     }
 }
@@ -28,12 +28,12 @@ impl Drop for IrqStatus {
 /// # Safety
 /// The MutexNoIrq ensures that interrupts are disabled while the lock is held (or being acquired),
 /// preventing deadlocks or reentrancy issues with interrupt handlers attempting to acquire the same lock.
-/// This makes it safe to be shared across threads in an environment where IRQs interact with locks.
+/// This makes it safe to be shared across threads in an environment where Irqs interact with locks.
 unsafe impl<T: ?Sized + Send> Sync for MutexNoIrq<T> {}
 
 /// Implement Send for MutexNoIrq
 /// # Safety
-/// If T is Send, and the lock mechanism is sound (including IRQ management),
+/// If T is Send, and the lock mechanism is sound (including Irq management),
 /// the MutexNoIrq as a whole can be sent to another thread.
 unsafe impl<T: ?Sized + Send> Send for MutexNoIrq<T> {}
 
@@ -60,12 +60,13 @@ impl<T: ?Sized> MutexNoIrq<T> {
         let original_irq_status = IrqStatus {
             irq_enabled: Irq::interrupt_enabled(),
         };
+        unsafe {
+            Irq::disable_interrupt();
+        }
 
-        Irq::disable_interrupt();
-
-        // If lock is not acquired. IRQs were disabled by us.
+        // If lock is not acquired. Irqs were disabled by us.
         // original_irq_status was not moved and will be dropped now,
-        // automatically restoring the original IRQ state.
+        // automatically restoring the original Irq state.
         self.lock.try_lock().map(|guard| MutexNoIrqGuard {
             guard,
             _irq_status: original_irq_status,
@@ -80,8 +81,9 @@ impl<T: ?Sized> MutexNoIrq<T> {
         let original_irq_status_keeper = IrqStatus {
             irq_enabled: Irq::interrupt_enabled(),
         };
-
-        Irq::disable_interrupt();
+        unsafe {
+            Irq::disable_interrupt();
+        }
 
         // Spin until the underlying lock is acquired.
         let acquired_guard = loop {
@@ -115,7 +117,7 @@ impl<T: ?Sized> MutexNoIrq<T> {
     }
 }
 
-/// The Mutex Guard that also manages IRQ state restoration.
+/// The Mutex Guard that also manages Irq state restoration.
 pub struct MutexNoIrqGuard<'a, T: ?Sized + 'a> {
     guard: MutexGuard<'a, T>,
     _irq_status: IrqStatus,

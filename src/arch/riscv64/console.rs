@@ -2,11 +2,19 @@
 pub struct DebugConsole;
 
 impl DebugConsole {
-    pub fn putchar(_ch: u8) {
-        unimplemented!()
+    #[inline]
+    #[allow(deprecated)]
+    pub fn putchar(ch: u8) {
+        sbi_rt::legacy::console_putchar(ch as _);
     }
 
+    #[inline]
+    #[allow(deprecated)]
     pub fn getchar() -> Option<u8> {
-        unimplemented!()
+        let c = sbi_rt::legacy::console_getchar() as u8;
+        match c == u8::MAX {
+            true => None,
+            _ => Some(c),
+        }
     }
 }

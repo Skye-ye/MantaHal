@@ -1,4 +1,12 @@
-pub mod addr;
+pub mod boot;
 pub mod config;
 pub mod console;
 pub mod irq;
+pub mod context;
+pub mod macros;
+pub mod mm;
+pub mod time;
+pub mod trapframe;
+pub mod trap;
+pub mod handler;
+pub mod arch;
