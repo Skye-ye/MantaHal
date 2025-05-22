@@ -2,7 +2,7 @@ use super::config::{
     time::TIMER_IRQ,
     trapframe::{KERNEL_TRAPFRAME_SIZE, USER_TRAPFRAME_SIZE},
 };
-use super::handler::HandleType;
+use super::handler::TrapType;
 use super::{handler, irq, time, trapframe};
 use core::arch::naked_asm;
 use loongArch64::register::badv;
@@ -183,7 +183,7 @@ pub extern "C" fn user_restore(context: *mut trapframe::TrapFrame) {
 
 /// 1、the first time transform to user mode
 /// 2、when user trap in kernel, it will trap into the context of this function
-pub fn run_user_task(context: &mut trapframe::TrapFrame) -> HandleType {
+pub fn run_user_task(context: &mut trapframe::TrapFrame) -> TrapType {
     user_restore(context);
     // user trap arrive here
     loongarch64_trap_handler(context)
@@ -220,7 +220,7 @@ pub extern "C" fn trap_vector_base() {
 }
 
 /// classify the trap type to handle type and pass it to specify handler
-fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
+fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> TrapType {
     let estat = estat::read();
     let trap = estat.cause();
     let mut token: usize = 0;
@@ -233,7 +233,7 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
                 // TIMER_IRQ
                 TIMER_IRQ => {
                     time::clear_timer();
-                    HandleType::Time
+                    TrapType::Time
                 }
                 // others
                 _ => {
@@ -242,7 +242,8 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
                 }
             }
         }
-
+        
+        // Exception
         Trap::Exception(
             page_fault @ (Exception::LoadPageFault
             | Exception::StorePageFault
@@ -253,7 +254,7 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
             | Exception::PagePrivilegeIllegal),
         ) => {
             token = page_fault as usize;
-            HandleType::PageFault
+            TrapType::PageFault
         }
 
         Trap::Exception(
@@ -263,14 +264,14 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
             | Exception::BoundsCheckFault),
         ) => {
             token = (address_error as usize) - 7;
-            HandleType::AddressError
+            TrapType::AddressError
         }
 
-        Trap::Exception(Exception::Syscall) => HandleType::SysCall,
+        Trap::Exception(Exception::Syscall) => TrapType::SysCall,
 
         Trap::Exception(Exception::Breakpoint) => {
             tf.era += 4;
-            HandleType::DeBug
+            TrapType::Breakpoint
         }
 
         Trap::Exception(
@@ -279,10 +280,14 @@ fn loongarch64_trap_handler(tf: &mut trapframe::TrapFrame) -> HandleType {
             | Exception::FloatingPointUnavailable),
         ) => {
             token = (instr_error as usize) - 13;
-            HandleType::InstrError
+            TrapType::InstrError
         }
 
+        Trap::Exception(Exception::TLBRFill) => TrapType::TLBRefill,
+
+        // Machine Error
         Trap::MachineError(_) => todo!(),
+        // Unknown
         Trap::Unknown => todo!(),
         _ => {
             panic!(
