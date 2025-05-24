@@ -1,4 +1,5 @@
 // mod.rs
+//! This crate is designed for loongarch-specific traptype
 pub mod exc_addr;
 pub mod exc_debug;
 pub mod exc_instr;
@@ -11,12 +12,12 @@ pub use super::trapframe::TrapFrame;
 
 /// transfrom trap type to handler-suitable type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum HandleType {
+pub enum TrapType {
     NoReason = 0,
     Irq = 1,
     Time = 2,
     SysCall = 3,
-    DeBug = 4,        // to avoid keyword conflict
+    Breakpoint = 4,        // to avoid keyword conflict
     PageFault = 5,    // 0-6
     AddressError = 6, // 0-3
     InstrError = 7,   // 0-2
@@ -31,7 +32,7 @@ static HANDLERS: [HandlerFn; 9] = [
     |_, _| {},            // IRQ
     irq_time::handler,    // Time
     exc_syscall::handler, // SysCall
-    exc_debug::handler,   // DeBug
+    exc_debug::handler,   // Breakpoint
     exc_page::handler,    // PageFault
     exc_addr::handler,    // AddressError
     exc_instr::handler,   // InstrError
@@ -41,7 +42,7 @@ static HANDLERS: [HandlerFn; 9] = [
 /// tf: context
 /// handle_type: which handler to call
 /// token: specific token for the handler
-pub fn specify_handler(tf: &mut TrapFrame, handle_type: HandleType, token: usize) {
+pub fn specify_handler(tf: &mut TrapFrame, handle_type: TrapType, token: usize) {
     let handler = HANDLERS[handle_type as usize];
     handler(tf, token);
 }

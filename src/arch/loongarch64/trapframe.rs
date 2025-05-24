@@ -1,7 +1,9 @@
+use core::arch::asm;
 /// General registers of Loongarch64.
 #[allow(missing_docs)]
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
+
 pub struct GeneralRegisters {
     pub zero: usize,
     pub ra: usize,
@@ -75,6 +77,9 @@ pub struct FloatingPointRegisters {
     pub fs6: f64,
     pub fs7: f64,
     pub fcsr: u32, // floating point control and status register
+    pub f_need_save: u8,  // for lazy save
+    pub f_need_restore: u8,
+    pub f_signal_dirty: u8
 }
 
 /// Saved registers when a trap (interrupt or exception) occurs.
@@ -84,8 +89,8 @@ pub struct TrapFrame {
     pub gr: GeneralRegisters, // general purpose registers
     pub era: usize,           // exception return address
     pub prmd: usize,          // pre-exception mode information
-    #[cfg(feature = "fp")]
-    pub fr: FloatingPointRegisters, // floating point registers
+    // #[cfg(feature = "fp")]
+    // pub fr: FloatingPointRegisters, // floating point registers
 }
 
 impl TrapFrame {
@@ -140,5 +145,121 @@ impl TrapFrame {
     #[inline]
     pub const fn arg7(&self) -> usize {
         self.gr.a7
+    }
+
+}
+
+
+impl FloatingPointRegisters {
+    // implementation of lazy save for floating point registers
+    pub fn new() -> Self {
+        unsafe { core::mem::zeroed() }
+    }
+
+    pub fn mark_save_if_needed(&mut self, need_save: u8) {
+        self.f_need_save |= need_save;
+        self.f_signal_dirty |= need_save;
+    }
+    pub fn yield_task(&mut self) {
+        self.save_fr();
+        self.f_need_restore = 1;
+    }
+
+    pub fn encounter_signal(&mut self) {
+        self.save_fr();
+    }
+
+    pub fn save_fr(&mut self) {
+        if self.f_need_save == 0 {
+            return;
+        }
+        self.f_need_save = 0;
+
+        unsafe {
+            let mut _t: usize = 1; // alloc a register but not zero.
+            asm!("
+            fsd  f0,  0*8({0})
+            fsd  f1,  1*8({0})
+            fsd  f2,  2*8({0})
+            fsd  f3,  3*8({0})
+            fsd  f4,  4*8({0})
+            fsd  f5,  5*8({0})
+            fsd  f6,  6*8({0})
+            fsd  f7,  7*8({0})
+            fsd  f8,  8*8({0})
+            fsd  f9,  9*8({0})
+            fsd f10, 10*8({0})
+            fsd f11, 11*8({0})
+            fsd f12, 12*8({0})
+            fsd f13, 13*8({0})
+            fsd f14, 14*8({0})
+            fsd f15, 15*8({0})
+            fsd f16, 16*8({0})
+            fsd f17, 17*8({0})
+            fsd f18, 18*8({0})
+            fsd f19, 19*8({0})
+            fsd f20, 20*8({0})
+            fsd f21, 21*8({0})
+            fsd f22, 22*8({0})
+            fsd f23, 23*8({0})
+            fsd f24, 24*8({0})
+            fsd f25, 25*8({0})
+            fsd f26, 26*8({0})
+            fsd f27, 27*8({0})
+            fsd f28, 28*8({0})
+            fsd f29, 29*8({0})
+            fsd f30, 30*8({0})
+            fsd f31, 31*8({0})
+            csrr {1}, fcsr
+            sw  {1}, 32*8({0})
+        ", in(reg) &self,
+                inout(reg) _t
+            );
+        };
+    }
+    pub fn restore(&mut self) {
+        if self.f_need_restore == 0 {
+            return;
+        }
+        self.f_need_restore = 0;
+        unsafe {
+            asm!("
+            fld  f0,  0*8({0})
+            fld  f1,  1*8({0})
+            fld  f2,  2*8({0})
+            fld  f3,  3*8({0})
+            fld  f4,  4*8({0})
+            fld  f5,  5*8({0})
+            fld  f6,  6*8({0})
+            fld  f7,  7*8({0})
+            fld  f8,  8*8({0})
+            fld  f9,  9*8({0})
+            fld f10, 10*8({0})
+            fld f11, 11*8({0})
+            fld f12, 12*8({0})
+            fld f13, 13*8({0})
+            fld f14, 14*8({0})
+            fld f15, 15*8({0})
+            fld f16, 16*8({0})
+            fld f17, 17*8({0})
+            fld f18, 18*8({0})
+            fld f19, 19*8({0})
+            fld f20, 20*8({0})
+            fld f21, 21*8({0})
+            fld f22, 22*8({0})
+            fld f23, 23*8({0})
+            fld f24, 24*8({0})
+            fld f25, 25*8({0})
+            fld f26, 26*8({0})
+            fld f27, 27*8({0})
+            fld f28, 28*8({0})
+            fld f29, 29*8({0})
+            fld f30, 30*8({0})
+            fld f31, 31*8({0})
+            lw  {0}, 32*8({0})
+            csrw fcsr, {0}
+        ", in(reg) &self
+            );
+        }
     }
 }
